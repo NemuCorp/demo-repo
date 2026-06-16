@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at TIMESTAMP NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(session_hash);
+
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

@@ -19,11 +19,17 @@ func NewCartDB(conn *sql.DB) (*CartDB, error) {
 	var c CartDB
 
 	stmt, err := conn.Prepare(`
-		INSERT INTO cart_items (user_id, product_id, quantity)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (user_id, product_id)
-		DO UPDATE SET quantity = cart_items.quantity + $3
-		RETURNING id, user_id, product_id, quantity, created_at
+		WITH inserted AS (
+			INSERT INTO cart_items (user_id, product_id, quantity)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (user_id, product_id)
+			DO UPDATE SET quantity = cart_items.quantity + $3
+			RETURNING id, user_id, product_id, quantity, created_at
+		)
+		SELECT i.id, i.user_id, i.product_id, i.quantity, i.created_at,
+			   p.name, p.price, p.image_path
+		FROM inserted i
+		JOIN products p ON p.id = i.product_id
 	`)
 	if err != nil {
 		return nil, err
@@ -43,8 +49,14 @@ func NewCartDB(conn *sql.DB) (*CartDB, error) {
 	c.getCart = stmt
 
 	stmt, err = conn.Prepare(`
-		UPDATE cart_items SET quantity = $3 WHERE user_id = $1 AND product_id = $2
-		RETURNING id, user_id, product_id, quantity, created_at
+		WITH updated AS (
+			UPDATE cart_items SET quantity = $3 WHERE user_id = $1 AND product_id = $2
+			RETURNING id, user_id, product_id, quantity, created_at
+		)
+		SELECT u.id, u.user_id, u.product_id, u.quantity, u.created_at,
+			   p.name, p.price, p.image_path
+		FROM updated u
+		JOIN products p ON p.id = u.product_id
 	`)
 	if err != nil {
 		return nil, err
@@ -80,9 +92,16 @@ type CartItem struct {
 
 func (c *CartDB) AddItem(userID, productID, quantity int) (*CartItem, error) {
 	ci := &CartItem{}
-	err := c.addItem.QueryRow(userID, productID, quantity).Scan(&ci.ID, &ci.UserID, &ci.ProductID, &ci.Quantity, &ci.CreatedAt)
+	var imagePath sql.NullString
+	err := c.addItem.QueryRow(userID, productID, quantity).Scan(
+		&ci.ID, &ci.UserID, &ci.ProductID, &ci.Quantity, &ci.CreatedAt,
+		&ci.ProductName, &ci.Price, &imagePath,
+	)
 	if err != nil {
 		return nil, err
+	}
+	if imagePath.Valid {
+		ci.ImagePath = imagePath.String
 	}
 	return ci, nil
 }
@@ -111,9 +130,16 @@ func (c *CartDB) GetCart(userID int) ([]CartItem, error) {
 
 func (c *CartDB) UpdateItem(userID, productID, quantity int) (*CartItem, error) {
 	ci := &CartItem{}
-	err := c.updateItem.QueryRow(userID, productID, quantity).Scan(&ci.ID, &ci.UserID, &ci.ProductID, &ci.Quantity, &ci.CreatedAt)
+	var imagePath sql.NullString
+	err := c.updateItem.QueryRow(userID, productID, quantity).Scan(
+		&ci.ID, &ci.UserID, &ci.ProductID, &ci.Quantity, &ci.CreatedAt,
+		&ci.ProductName, &ci.Price, &imagePath,
+	)
 	if err != nil {
 		return nil, err
+	}
+	if imagePath.Valid {
+		ci.ImagePath = imagePath.String
 	}
 	return ci, nil
 }

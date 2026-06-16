@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/NemuCorp/demo-repo/server/logger"
+	"github.com/NemuCorp/demo-repo/server/myerrors"
 )
 
 type ProductDB struct {
@@ -94,6 +95,9 @@ func (p *ProductDB) GetProductByID(id int) (*Product, error) {
 	err := p.getProductByID.QueryRow(id).Scan(
 		&prod.ID, &prod.Name, &desc, &prod.Price, &imagePath, &prod.Stock, &prod.CreatedAt, &prod.UpdatedAt,
 	)
+	if err == sql.ErrNoRows {
+		return nil, myerrors.ErrProductNotFound
+	}
 	if err != nil {
 		return nil, err
 	}

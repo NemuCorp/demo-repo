@@ -41,6 +41,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(database.Auth)
 	cartHandler := handler.NewCartHandler(database.Cart)
 	productHandler := handler.NewProductHandler(database.Product)
+	authMiddleware := handler.AuthMiddleware(database.Auth)
 
 	r := gin.Default()
 
@@ -50,7 +51,7 @@ func main() {
 		{
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
-			auth.POST("/logout", authHandler.Logout)
+			auth.POST("/logout", authMiddleware, authHandler.Logout)
 		}
 
 		products := api.Group("/products")
@@ -60,7 +61,7 @@ func main() {
 			products.POST("", productHandler.Create)
 		}
 
-		cart := api.Group("/cart")
+		cart := api.Group("/cart", authMiddleware)
 		{
 			cart.GET("", cartHandler.View)
 			cart.POST("", cartHandler.Add)

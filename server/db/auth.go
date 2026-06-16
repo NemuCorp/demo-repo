@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/NemuCorp/demo-repo/server/logger"
+	"github.com/NemuCorp/demo-repo/server/myerrors"
 )
 
 type AuthDB struct {
@@ -95,6 +96,9 @@ func (a *AuthDB) CreateUser(email, passwordHash string) (*User, error) {
 func (a *AuthDB) GetUserByEmail(email string) (*User, error) {
 	u := &User{}
 	err := a.getUserByEmail.QueryRow(email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, myerrors.ErrUserNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +108,9 @@ func (a *AuthDB) GetUserByEmail(email string) (*User, error) {
 func (a *AuthDB) GetUserByID(id int) (*User, error) {
 	u := &User{}
 	err := a.getUserByID.QueryRow(id).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, myerrors.ErrUserNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +129,9 @@ func (a *AuthDB) CreateSession(userID int, sessionHash string, expiresAt time.Ti
 func (a *AuthDB) GetSession(sessionHash string) (*Session, error) {
 	s := &Session{}
 	err := a.getSession.QueryRow(sessionHash, time.Now()).Scan(&s.ID, &s.UserID, &s.SessionHash, &s.CreatedAt, &s.ExpiresAt)
+	if err == sql.ErrNoRows {
+		return nil, myerrors.ErrSessionExpired
+	}
 	if err != nil {
 		return nil, err
 	}

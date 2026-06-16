@@ -2,11 +2,13 @@ package handler
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/NemuCorp/demo-repo/server/db"
@@ -48,7 +50,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user, err := h.DB.CreateUser(req.Email, string(passwordHash))
 	if err != nil {
-		JSONError(c, http.StatusConflict, myerrors.ErrEmailTaken.Error())
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			JSONError(c, http.StatusConflict, myerrors.ErrEmailTaken.Error())
+			return
+		}
+		logger.Error.Println("failed to create user:", err)
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
 		return
 	}
 
@@ -81,14 +88,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	plainToken := hex.EncodeToString(token)
 
-	sessionHash, err := bcrypt.GenerateFromPassword([]byte(plainToken), bcrypt.DefaultCost)
-	if err != nil {
-		logger.Error.Println("failed to hash session:", err)
-		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
-		return
-	}
+	hash := sha256.Sum256([]byte(plainToken))
+	sessionHash := hex.EncodeToString(hash[:])
 
-	session, err := h.DB.CreateSession(user.ID, string(sessionHash), time.Now().Add(24*time.Hour))
+	session, err := h.DB.CreateSession(user.ID, sessionHash, time.Now().Add(24*time.Hour))
 	if err != nil {
 		logger.Error.Println("failed to create session:", err)
 		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
