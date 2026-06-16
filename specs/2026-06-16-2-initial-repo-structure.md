@@ -31,6 +31,25 @@ demo-repo/
     logger/        # Logger initialization and logging modes
 ```
 
+### Client Structure
+
+The `client/` directory uses Vite with React and TypeScript. Minimal folder convention:
+
+```
+client/
+  src/
+    components/    # Reusable UI components
+    pages/         # Page-level components (one per route)
+    hooks/         # Custom React hooks
+    services/      # API client and data-fetching logic
+  public/          # Static assets
+  index.html       # Entry HTML
+  vite.config.ts   # Vite configuration
+  tsconfig.json    # TypeScript configuration
+```
+
+When a domain grows, split its components and services into a subdirectory (e.g., `src/components/auth/`, `src/services/auth/`).
+
 ### Server Packages
 
 #### `myerrors/`
@@ -43,6 +62,7 @@ demo-repo/
 - Each domain defines a handler struct (e.g., `AuthHandler`, `CartHandler`) holding any needed dependencies (e.g., a DB connection or domain-specific DB struct).
 - All handler methods are bound to these structs.
 - When a domain file grows too large, convert it into a subdirectory (e.g., `handler/auth/`) and split logic across files within that directory.
+- Handlers translate errors into HTTP responses via a shared helper in `helpers.go` (e.g., `func WriteError(w http.ResponseWriter, err error)`). The helper maps sentinel errors to status codes: `ErrUnauthorized` → 401, `ErrProductNotFound` → 404, `ErrCartEmpty` → 400. The JSON response body uses a consistent shape: `{"error": "<message>"}`.
 
 #### `db/`
 - Each domain gets its own file: `auth.go`, `cart.go`, `product.go`.
@@ -53,14 +73,19 @@ demo-repo/
 - When a domain file grows too large, convert it into a subdirectory (e.g., `db/auth/`) and split logic across files within that directory.
 
 #### `logger/`
-- Expose an `Init()` function to configure the logger.
+- Expose `func Init(mode string) (*slog.Logger, error)` where `mode` is `"development"` (text output, debug level) or `"production"` (JSON output, info level). Uses Go's standard `log/slog` package.
 - Support multiple logging modes (e.g., development, production).
 
 #### `main.go`
+- Configuration is loaded from environment variables at the start of `init()`:
+  - `DB_DSN` — PostgreSQL connection string (required, no default)
+  - `SERVER_PORT` — listen port (default `8080`)
+  - `LOG_MODE` — `"development"` or `"production"` (default `"development"`)
 - `init()` function: initialize DB connection, create prepared statements, initialize logger.
 - Configure Gin router, register handler routes.
 
 #### `cmd.go`
+- Shares `package main` with `main.go`; defines command functions (e.g., `func cmdUp()`, `func cmdDown()`, `func cmdClean()`, `func cmdImport()`, `func cmdExport()`) called from `main.go` via an argument switch on `os.Args[1]`.
 - CLI commands for database lifecycle:
   - `UP` — run pending migrations
   - `DOWN` — rollback the last migration
