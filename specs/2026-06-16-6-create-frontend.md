@@ -45,6 +45,7 @@ client/src/
     admin/
       Dashboard.tsx   # Admin overview / quick stats
       Products.tsx    # Admin product CRUD (list, create, edit, delete)
+    NotFound.tsx       # 404 catch-all page
   hooks/
     useAuth.tsx       # AuthContext + provider; exposes user, login, logout, register
   services/
@@ -68,22 +69,78 @@ client/src/
 | `/cart` | Cart | Yes | No |
 | `/admin` | Dashboard | Yes | Yes |
 | `/admin/products` | Admin Product Management | Yes | Yes |
+| `*` | NotFound | No | No |
 
 ### Auth Flow
 
 1. On app mount, `useAuth` checks `localStorage` for a saved session token.
 2. If a token exists, the provider sets the authenticated user state.
 3. Axios interceptor attaches `Authorization: Bearer <token>` to every request.
-4. `ProtectedRoute` component checks auth state; redirects to `/login` if unauthenticated.
-5. Admin routes additionally check for an admin indicator (e.g., user role or admin flag). Since the backend currently has no role system, admin access can be gated by a known admin email list or a localStorage flag as a temporary measure. Document this as a known gap.
-6. Logout clears the token from `localStorage` and resets auth state.
+4. `ProtectedRoute` component checks auth state; redirects to `/login` if unauthenticated, passing the current path as a `redirect` query parameter (e.g., `/login?redirect=/cart`).
+5. The Login and Register pages check for the `redirect` query parameter on mount; on successful authentication they navigate the user back to that path instead of the home page.
+6. Admin routes additionally check for an admin indicator (e.g., user role or admin flag). Since the backend currently has no role system, admin access can be gated by a known admin email list or a localStorage flag as a temporary measure. Document this as a known gap.
+7. Logout clears the token from `localStorage` and resets auth state.
 
 ### API Integration
 
-- An axios instance in `services/api.ts` is configured with `baseURL` pointing to the backend (default `http://localhost:8080/api`).
+- An axios instance in `services/api.ts` is configured with `baseURL` read from the `REACT_APP_API_URL` environment variable, falling back to `http://localhost:8080/api` if not set.
 - A request interceptor reads the session token from `localStorage` and attaches it as a Bearer header.
 - A response interceptor handles 401 responses by clearing auth state and redirecting to `/login`.
 - Service modules (`auth.ts`, `products.ts`, `cart.ts`) wrap API calls and return typed responses.
+
+#### TypeScript Interfaces
+
+The backend uses snake_case JSON field names. Define the following interfaces to match:
+
+```ts
+interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  image_path?: string;
+  stock: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CartItem {
+  id: number;
+  user_id: number;
+  product_id: number;
+  product_name: string;
+  price: number;
+  quantity: number;
+  image_path?: string;
+  created_at: string;
+}
+
+interface User {
+  id: number;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Session {
+  id: string;
+  user_id: number;
+  created_at: string;
+  expires_at: string;
+}
+
+interface LoginResponse {
+  token: string;
+  session: Session;
+}
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+}
+```
 
 ### Admin Side
 
@@ -91,6 +148,14 @@ Since the backend currently lacks admin-specific endpoints or a user-role system
 - Admin product management pages call the existing public `/api/products` endpoints (GET, POST) plus any update/delete endpoints that may be added.
 - Admin dashboard shows quick stats derived from client-side state or lightweight API queries.
 - Admin access is temporarily gated by a hardcoded admin email check or a manually-set localStorage flag. A follow-up issue should add proper admin roles to the backend.
+
+### UI State Handling
+
+Every data-fetching page must handle three states consistently:
+
+- **Loading**: Display a spinner or skeleton placeholder while API calls are in-flight.
+- **Empty**: Show a friendly message when data is returned but the collection is empty (e.g., "No products found" on the product listing page, "Your cart is empty" on the cart page).
+- **Error**: Render an error banner with a description of the failure and a retry action when an API call fails (non-401 errors; 401 responses are handled globally by the axios interceptor).
 
 ## Risks
 
@@ -113,4 +178,7 @@ Since the backend currently lacks admin-specific endpoints or a user-role system
 - [ ] Admin product page allows creating new products and listing existing ones.
 - [ ] Navbar reflects auth state (shows Login/Register when logged out, Cart/Logout when logged in).
 - [ ] All API calls include the Bearer token when authenticated; 401 responses trigger logout.
+- [ ] After login from a protected redirect, the user is returned to their originally requested page.
+- [ ] The API base URL is configurable via the `REACT_APP_API_URL` environment variable.
+- [ ] A 404 catch-all page is displayed for unknown routes.
 - [ ] The app is functional against a running backend with the existing API endpoints.
