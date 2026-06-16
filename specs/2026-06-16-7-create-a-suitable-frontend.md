@@ -11,7 +11,7 @@ The existing `client/` directory contains only a placeholder React app (`App.tsx
 - Add `react-router-dom` for client-side routing, splitting the app into public (client) and admin routes.
 - Create reusable UI components (header/nav, product cards, cart item rows, forms) following existing convention.
 - Build public-facing pages: Home, Product Listing, Product Detail, Cart, Login, Register.
-- Build admin-facing pages: Dashboard and Product Management (list/create/edit).
+- Build admin-facing pages: Dashboard and Product Management (list/create only).
 - Create an API service layer (`src/services/`) to call the backend endpoints, with auth token management.
 - Use existing `package.json` toolchain (react-scripts, TypeScript) without ejecting or changing the build system.
 - Store the auth token in `localStorage` and attach it via an API helper; handle 401 responses by redirecting to login.
@@ -55,8 +55,8 @@ src/
     Register.tsx         # Registration form
     admin/
       Dashboard.tsx      # Admin landing with summary stats (placeholder)
-      ProductList.tsx    # Admin product table with edit/delete
-      ProductForm.tsx    # Create/edit product form
+      ProductList.tsx    # Admin product table (list + create only)
+      ProductForm.tsx    # Create product form
   hooks/
     useAuth.tsx          # Auth context/hook for token state and user info
     useApi.tsx           # Generic fetch wrapper that injects auth header
@@ -86,6 +86,29 @@ The Go server listens on port 8080 and exposes:
 | PUT | /api/cart/:productId | Yes | Update cart item quantity |
 | DELETE | /api/cart/:productId | Yes | Remove item from cart |
 
+#### Request/Response Schemas
+
+**Auth endpoints:**
+
+- `POST /api/auth/register` — request: `{ email, password }` (password min 6 chars); response: `{ user: { id, email } }`
+- `POST /api/auth/login` — request: `{ email, password }`; response: `{ token, session: { id, user_id, created_at, expires_at } }`
+- `POST /api/auth/logout` — request: (none, token in header); response: `{ message }`
+
+**Product endpoints:**
+
+- `GET /api/products` — response: `{ products: [{ id, name, description, price, image_path, stock, created_at, updated_at }] }`
+- `GET /api/products/:id` — response: `{ product: { id, name, description, price, image_path, stock, created_at, updated_at } }`
+- `POST /api/products` — request: `{ name, description?, price, image_path?, stock }`; response: `{ product: { id, ... } }`
+
+**Cart endpoints:**
+
+- `GET /api/cart` — response: `{ items: [{ product_id, name, price, quantity }] }`
+- `POST /api/cart` — request: `{ product_id, quantity }` (quantity min 1); response: `{ item: { product_id, quantity } }`
+- `PUT /api/cart/:productId` — request: `{ quantity }` (quantity min 1); response: `{ item: { product_id, quantity } }`
+- `DELETE /api/cart/:productId` — response: `{ message }`
+
+**Error format:** All endpoints return `{ error: "message" }` on failure. The HTTP status code reflects the error type (400, 401, 404, 500).
+
 The API base URL defaults to `http://localhost:8080` and can be overridden with the `REACT_APP_API_URL` environment variable (CRA convention).
 
 The `src/services/api.ts` module provides a thin `fetch` wrapper that:
@@ -98,7 +121,7 @@ The `src/services/api.ts` module provides a thin `fetch` wrapper that:
 
 A simple React context (`useAuth`) holds:
 - `token: string | null` (from localStorage)
-- `user: { id, email } | null` (populated after login)
+- `user: { id } | null` (populated from session.user_id after login)
 - `login(email, password)`, `register(email, password)`, `logout()` actions
 
 On app mount, if a token exists in localStorage, the app does not re-validate it proactively (the API returns 401 on expired/invalid tokens, which triggers the redirect). This avoids an extra request on every page load.
