@@ -83,7 +83,10 @@ function ProductPage() {
                   min={1}
                   max={product.stock}
                   value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    setQuantity(isNaN(v) || v < 1 ? 1 : v > product.stock ? product.stock : v);
+                  }}
                 />
               </label>
               <button

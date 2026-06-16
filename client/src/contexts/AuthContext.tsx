@@ -31,8 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const data = await api.login(email, password);
+      const user: api.User = { id: data.session.user_id, email, created_at: data.session.created_at };
+      api.setStoredUser(user);
       setState({
-        user: { id: data.session.user_id, email, created_at: data.session.created_at },
+        user,
         loading: false,
         error: null,
       });
@@ -66,13 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.logout();
     } finally {
+      api.clearStoredUser();
       setState({ user: null, loading: false, error: null });
     }
   }, []);
 
   useEffect(() => {
     if (api.isLoggedIn()) {
-      setState((s) => ({ ...s, loading: false }));
+      const storedUser = api.getStoredUser();
+      setState({ user: storedUser, loading: false, error: null });
     } else {
       setState({ user: null, loading: false, error: null });
     }
