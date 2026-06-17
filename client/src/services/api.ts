@@ -1,5 +1,7 @@
 import { AuthResponse, CartItem, Product, User } from '../types';
 
+export type { CartItem, Product };
+
 const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
 function getToken(): string | null {
