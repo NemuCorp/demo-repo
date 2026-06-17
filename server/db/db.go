@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -24,27 +25,31 @@ func Init(connStr string) (*DB, error) {
 		return nil, fmt.Errorf("db ping: %w", err)
 	}
 
-	db := &DB{Conn: conn}
+	conn.SetMaxOpenConns(25)
+	conn.SetMaxIdleConns(5)
+	conn.SetConnMaxLifetime(5 * time.Minute)
+
+	d := &DB{Conn: conn}
 
 	authDB, err := NewAuthDB(conn)
 	if err != nil {
 		return nil, fmt.Errorf("auth db init: %w", err)
 	}
-	db.Auth = authDB
+	d.Auth = authDB
 
 	cartDB, err := NewCartDB(conn)
 	if err != nil {
 		return nil, fmt.Errorf("cart db init: %w", err)
 	}
-	db.Cart = cartDB
+	d.Cart = cartDB
 
 	productDB, err := NewProductDB(conn)
 	if err != nil {
 		return nil, fmt.Errorf("product db init: %w", err)
 	}
-	db.Product = productDB
+	d.Product = productDB
 
-	return db, nil
+	return d, nil
 }
 
 func (d *DB) Close() error {

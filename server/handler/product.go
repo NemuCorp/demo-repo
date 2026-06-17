@@ -27,7 +27,17 @@ type CreateProductRequest struct {
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
-	products, err := h.DB.ListProducts()
+	limit := 20
+	offset := 0
+
+	if l, err := strconv.Atoi(c.DefaultQuery("limit", "20")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
+	if o, err := strconv.Atoi(c.DefaultQuery("offset", "0")); err == nil && o >= 0 {
+		offset = o
+	}
+
+	products, err := h.DB.ListProducts(limit, offset)
 	if err != nil {
 		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
 		return
@@ -37,7 +47,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 		products = []db.Product{}
 	}
 
-	JSONSuccess(c, http.StatusOK, gin.H{"products": products})
+	JSONSuccess(c, http.StatusOK, gin.H{"products": products, "limit": limit, "offset": offset})
 }
 
 func (h *ProductHandler) Get(c *gin.Context) {

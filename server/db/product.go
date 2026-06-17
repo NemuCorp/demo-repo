@@ -40,7 +40,7 @@ func NewProductDB(conn *sql.DB) (*ProductDB, error) {
 
 	stmt, err = conn.Prepare(`
 		SELECT id, name, description, price, image_path, stock, created_at, updated_at
-		FROM products ORDER BY id
+		FROM products ORDER BY id LIMIT $1 OFFSET $2
 	`)
 	if err != nil {
 		return nil, err
@@ -110,14 +110,14 @@ func (p *ProductDB) GetProductByID(id int) (*Product, error) {
 	return prod, nil
 }
 
-func (p *ProductDB) ListProducts() ([]Product, error) {
-	rows, err := p.listProducts.Query()
+func (p *ProductDB) ListProducts(limit, offset int) ([]Product, error) {
+	rows, err := p.listProducts.Query(limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var products []Product
+	products := make([]Product, 0)
 	for rows.Next() {
 		var prod Product
 		var desc, imagePath sql.NullString
