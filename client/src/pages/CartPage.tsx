@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CartItem, getCart, updateCartItem, removeFromCart } from '../services/api';
+import { trackPageView, trackCartRemove } from '../services/tracking';
 
 function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -16,6 +17,7 @@ function CartPage() {
   };
 
   useEffect(() => {
+    trackPageView('/cart');
     fetchCart();
   }, []);
 
@@ -28,9 +30,10 @@ function CartPage() {
     }
   };
 
-  const handleRemove = async (productId: number) => {
+  const handleRemove = async (productId: number, productName?: string) => {
     try {
       await removeFromCart(productId);
+      trackCartRemove(productId, productName || '');
       fetchCart();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove');
@@ -75,7 +78,7 @@ function CartPage() {
                       onChange={(e) => {
                         const qty = parseInt(e.target.value, 10) || 0;
                         if (qty === 0) {
-                          handleRemove(item.product_id);
+                          handleRemove(item.product_id, item.product_name);
                         } else {
                           handleUpdateQuantity(item.product_id, qty);
                         }
@@ -86,7 +89,7 @@ function CartPage() {
                     ${(item.price * item.quantity).toFixed(2)}
                   </span>
                   <button
-                    onClick={() => handleRemove(item.product_id)}
+                    onClick={() => handleRemove(item.product_id, item.product_name)}
                     className="btn-danger btn-sm"
                   >
                     Remove

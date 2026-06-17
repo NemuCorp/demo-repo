@@ -1,6 +1,7 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { trackPageView, trackRegistration } from '../services/tracking';
 
 function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -9,6 +10,10 @@ function RegisterPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const { register, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    trackPageView('/register');
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,6 +30,7 @@ function RegisterPage() {
 
     try {
       await register(email, password);
+      trackRegistration();
       navigate('/');
     } catch {
       // error is set in context

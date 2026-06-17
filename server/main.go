@@ -41,6 +41,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(database.Auth)
 	cartHandler := handler.NewCartHandler(database.Cart)
 	productHandler := handler.NewProductHandler(database.Product)
+	trackingHandler := handler.NewTrackingHandler(database.Tracking)
 	authMiddleware := handler.AuthMiddleware(database.Auth)
 
 	r := gin.Default()
@@ -67,6 +68,16 @@ func main() {
 			cart.POST("", cartHandler.Add)
 			cart.PUT("/:productId", cartHandler.Update)
 			cart.DELETE("/:productId", cartHandler.Remove)
+		}
+
+		tracking := api.Group("/track")
+		{
+			tracking.POST("", trackingHandler.Track)
+		}
+
+		admin := api.Group("/admin", authMiddleware)
+		{
+			admin.GET("/stats", trackingHandler.Dashboard)
 		}
 	}
 
