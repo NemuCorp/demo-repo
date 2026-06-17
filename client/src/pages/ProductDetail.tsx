@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../services/api';
 import { Product } from '../types';
+import { trackPageView, trackProductView, trackCartAdd } from '../services/tracking';
 
 function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +18,11 @@ function ProductDetail() {
   useEffect(() => {
     if (!id) return;
     api.getProduct(parseInt(id))
-      .then((data) => setProduct(data.product))
+      .then((data) => {
+        setProduct(data.product);
+        trackProductView(data.product.id, data.product.name);
+        trackPageView(`/products/${id}`);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -31,6 +36,7 @@ function ProductDetail() {
     setAdding(true);
     try {
       await api.addToCart(product.id, quantity);
+      trackCartAdd(product.id, product.name, quantity);
       alert('Added to cart!');
     } catch (err: any) {
       setError(err.message);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { Product } from '../../types';
+import { trackPageView, trackProductCreate } from '../../services/tracking';
 
 function ProductManagement() {
   const { id: editId } = useParams<{ id?: string }>();
@@ -27,6 +28,7 @@ function ProductManagement() {
   };
 
   useEffect(() => {
+    trackPageView('/admin/products');
     fetchProducts();
   }, []);
 
@@ -67,6 +69,7 @@ function ProductManagement() {
         image_path: imagePath,
         stock: parseInt(stock) || 0,
       });
+      trackProductCreate(name);
       setSuccess(isEditing ? 'Product updated!' : 'Product created!');
       resetForm();
       fetchProducts();

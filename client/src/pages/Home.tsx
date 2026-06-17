@@ -1,6 +1,12 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { trackPageView } from '../services/tracking';
 
 function Home() {
+  useEffect(() => {
+    trackPageView('/');
+  }, []);
+
   return (
     <div className="page home-page">
       <section className="hero">

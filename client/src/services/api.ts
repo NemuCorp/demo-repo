@@ -97,3 +97,39 @@ export async function removeCartItem(productId: number): Promise<{ message: stri
     method: 'DELETE',
   });
 }
+
+export interface DashboardMetrics {
+  total_users: number;
+  total_products: number;
+  page_views: number;
+  product_views: number;
+  cart_adds: number;
+  registrations: number;
+  today: {
+    active_users: number;
+    total_events: number;
+    products_viewed: number;
+  };
+  top_products: Array<{
+    product_id: string;
+    product_name: string;
+    views: number;
+  }>;
+  recent_activity: Array<{
+    id: number;
+    user_id: number | null;
+    user_email: string;
+    event_type: string;
+    event_data: unknown;
+    created_at: string;
+  }>;
+  daily_stats: Array<{
+    day: string;
+    event_type: string;
+    count: number;
+  }>;
+}
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  return request<DashboardMetrics>('/api/admin/stats');
+}

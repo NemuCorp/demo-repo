@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as api from '../../services/api';
 import { Product } from '../../types';
+import { trackPageView } from '../../services/tracking';
 
 function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -9,6 +10,7 @@ function AdminDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    trackPageView('/admin');
     api.getProducts()
       .then((data) => setProducts(data.products))
       .catch((err) => setError(err.message))

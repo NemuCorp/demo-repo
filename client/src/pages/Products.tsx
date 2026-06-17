@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import { Product } from '../types';
+import { trackPageView } from '../services/tracking';
 
 function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -9,6 +10,7 @@ function Products() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    trackPageView('/products');
     api.getProducts()
       .then((data) => setProducts(data.products))
       .catch((err) => setError(err.message))

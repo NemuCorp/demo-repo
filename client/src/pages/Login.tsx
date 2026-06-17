@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { trackPageView, trackLogin } from '../services/tracking';
 
 function Login() {
   const { login } = useAuth();
@@ -10,12 +11,17 @@ function Login() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    trackPageView('/login');
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
       await login(email, password);
+      trackLogin();
       navigate('/');
     } catch (err: any) {
       setError(err.message);

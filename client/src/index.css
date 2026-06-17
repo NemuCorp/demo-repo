@@ -597,6 +597,131 @@ body {
   text-decoration: underline;
 }
 
+.analytics {
+  width: 100%;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.analytics-grid-sm {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.analytics-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+
+.analytics-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.analytics-card-sm {
+  padding: 16px;
+}
+
+.analytics-card-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.analytics-card-sm .analytics-card-value {
+  font-size: 1.4rem;
+}
+
+.analytics-card-label {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.analytics-section {
+  margin-top: 28px;
+}
+
+.analytics-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.analytics-table {
+  font-size: 0.85rem;
+}
+
+.analytics-table th {
+  font-size: 0.78rem;
+}
+
+.activity-time {
+  white-space: nowrap;
+  color: #888;
+  font-size: 0.82rem;
+}
+
+.activity-data {
+  color: #555;
+  font-size: 0.82rem;
+}
+
+.event-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.event-page_view {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.event-product_view {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.event-cart_add {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.event-cart_remove {
+  background: #fce4ec;
+  color: #c62828;
+}
+
+.event-registration {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.event-login {
+  background: #e0f7fa;
+  color: #00695c;
+}
+
+.event-product_created {
+  background: #f1f8e9;
+  color: #558b2f;
+}
+
 @media (max-width: 768px) {
   .product-detail {
     flex-direction: column;
