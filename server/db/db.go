@@ -8,10 +8,11 @@ import (
 )
 
 type DB struct {
-	Conn   *sql.DB
-	Auth   *AuthDB
-	Cart   *CartDB
-	Product *ProductDB
+	Conn     *sql.DB
+	Auth     *AuthDB
+	Cart     *CartDB
+	Product  *ProductDB
+	Tracking *TrackingDB
 }
 
 func Init(connStr string) (*DB, error) {
@@ -43,6 +44,12 @@ func Init(connStr string) (*DB, error) {
 		return nil, fmt.Errorf("product db init: %w", err)
 	}
 	db.Product = productDB
+
+	trackingDB, err := NewTrackingDB(conn)
+	if err != nil {
+		return nil, fmt.Errorf("tracking db init: %w", err)
+	}
+	db.Tracking = trackingDB
 
 	return db, nil
 }

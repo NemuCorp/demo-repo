@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Product, getProduct, addToCart } from '../services/api';
+import { trackPageView, trackProductView, trackCartAdd } from '../services/tracking';
 import { useAuth } from '../contexts/AuthContext';
 
 function ProductPage() {
@@ -17,8 +18,13 @@ function ProductPage() {
 
   useEffect(() => {
     if (!id) return;
-    getProduct(parseInt(id, 10))
-      .then((data) => setProduct(data.product))
+    const productId = parseInt(id, 10);
+    getProduct(productId)
+      .then((data) => {
+        setProduct(data.product);
+        trackProductView(data.product.id, data.product.name);
+        trackPageView(`/products/${id}`);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -35,6 +41,7 @@ function ProductPage() {
     setAddSuccess(false);
     try {
       await addToCart(product.id, quantity);
+      trackCartAdd(product.id, product.name, quantity);
       setAddSuccess(true);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : 'Failed to add to cart');
