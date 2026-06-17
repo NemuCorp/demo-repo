@@ -79,7 +79,26 @@ View all products in a table and create new products via a form interface.
 
 ## Getting Started
 
-### Prerequisites
+### Quick Start with Docker Compose
+
+The fastest way to run the entire stack is with a single command:
+
+```bash
+git clone https://github.com/NemuCorp/demo-repo.git
+cd demo-repo
+docker compose up
+```
+
+This builds and starts all three services (PostgreSQL, Go backend, React frontend). Once running:
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- API: [http://localhost:8080](http://localhost:8080)
+
+Database migrations run automatically on startup. To stop: `docker compose down`.
+
+### Manual Setup
+
+#### Prerequisites
 
 - **Go** 1.21 or newer
 - **Node.js** 18 or newer with npm
