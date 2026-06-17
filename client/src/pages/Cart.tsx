@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import { CartItem } from '../types';
+import { trackPageView, trackCartRemove } from '../services/tracking';
 
 function Cart() {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -17,6 +18,7 @@ function Cart() {
   };
 
   useEffect(() => {
+    trackPageView('/cart');
     fetchCart();
   }, []);
 
@@ -29,9 +31,10 @@ function Cart() {
     }
   };
 
-  const handleRemove = async (productId: number) => {
+  const handleRemove = async (productId: number, productName?: string) => {
     try {
       await api.removeCartItem(productId);
+      trackCartRemove(productId, productName || '');
       fetchCart();
     } catch (err: any) {
       setError(err.message);
@@ -72,7 +75,7 @@ function Cart() {
                       onChange={(e) => {
                         const qty = parseInt(e.target.value) || 0;
                         if (qty === 0) {
-                          handleRemove(item.product_id);
+                          handleRemove(item.product_id, item.product_name);
                         } else {
                           handleUpdateQuantity(item.product_id, qty);
                         }
@@ -84,7 +87,7 @@ function Cart() {
                   </p>
                   <button
                     className="btn btn-danger"
-                    onClick={() => handleRemove(item.product_id)}
+                    onClick={() => handleRemove(item.product_id, item.product_name)}
                   >
                     Remove
                   </button>
