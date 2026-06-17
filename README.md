@@ -2,23 +2,25 @@
 
 A full-stack e-commerce web application built with React, TypeScript, Go, and PostgreSQL. Browse products, manage a shopping cart, and handle user authentication — all in one clean monorepo.
 
+---
+
 ## Screenshots
 
 ### Home Page — Product Catalog
 
-![Home Page](screenshots/homepage.png)
+![Home Page](screenshots/home-page.svg)
 
 Browse all available products in a responsive grid layout. Each product card shows the name, price, stock status, and an image placeholder.
 
 ### Product Detail Page
 
-![Product Detail](screenshots/product-detail.png)
+![Product Detail](screenshots/product-page.svg)
 
 View detailed information about a product, including its description, price, stock availability, and an image. Authenticated users can add items to their cart directly from this page.
 
 ### Shopping Cart
 
-![Cart](screenshots/cart.png)
+![Cart](screenshots/cart-page.svg)
 
 Review and manage items in your cart. Update quantities or remove items before proceeding to checkout.
 
@@ -26,13 +28,13 @@ Review and manage items in your cart. Update quantities or remove items before p
 
 | Login | Register |
 |-------|----------|
-| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
+| ![Login](screenshots/login-page.svg) | ![Register](screenshots/register-page.svg) |
 
 Secure authentication with hashed passwords and session tokens. Users can register a new account or log in with existing credentials.
 
 ### Admin Dashboard
 
-![Admin Dashboard](screenshots/admin-dashboard.png)
+![Admin Dashboard](screenshots/admin-dashboard.svg)
 
 Administrators can manage products — create, edit, and delete listings — from a dedicated admin panel.
 
@@ -171,3 +173,23 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 | POST   | `/api/cart`             | Yes  | Add item to cart         |
 | PUT    | `/api/cart/:productId`  | Yes  | Update item quantity     |
 | DELETE | `/api/cart/:productId`  | Yes  | Remove item from cart    |
+
+## Available Scripts
+
+### Client (`client/`)
+
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start the React development server |
+| `npm run build` | Create an optimized production build |
+| `npm test` | Run the test suite |
+
+### Server (`server/`)
+
+| Command | Description |
+|---------|-------------|
+| `go run .` | Start the API server |
+| `go run . up` | Run database migrations |
+| `go run . down` | Rollback the last migration |
+| `go run . clean` | Drop all database tables |
+| `go test ./...` | Run all Go tests |

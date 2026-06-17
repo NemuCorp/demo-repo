@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#f5f5f5"/>
+  <!-- Navbar -->
+  <rect x="0" y="0" width="800" height="50" fill="#2c3e50"/>
+  <text x="20" y="32" fill="white" font-family="Arial" font-size="18" font-weight="bold">Demo Store</text>
+  <text x="600" y="32" fill="white" font-family="Arial" font-size="14">Products</text>
+  <text x="680" y="32" fill="white" font-family="Arial" font-size="14">Cart</text>
+  <text x="730" y="32" fill="white" font-family="Arial" font-size="14">Login</text>
+  <!-- Login Form -->
+  <rect x="200" y="100" width="400" height="320" rx="12" fill="white" stroke="#ddd"/>
+  <text x="400" y="150" fill="#333" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Sign In</text>
+  <text x="220" y="190" fill="#555" font-family="Arial" font-size="14">Email</text>
+  <rect x="220" y="200" width="360" height="40" rx="6" fill="white" stroke="#ccc"/>
+  <text x="230" y="225" fill="#aaa" font-family="Arial" font-size="14">Enter your email</text>
+  <text x="220" y="270" fill="#555" font-family="Arial" font-size="14">Password</text>
+  <rect x="220" y="280" width="360" height="40" rx="6" fill="white" stroke="#ccc"/>
+  <text x="230" y="305" fill="#aaa" font-family="Arial" font-size="14">Enter your password</text>
+  <rect x="220" y="345" width="360" height="40" rx="6" fill="#3498db"/>
+  <text x="400" y="370" fill="white" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Sign In</text>
+  <text x="310" y="410" fill="#777" font-family="Arial" font-size="13">Don't have an account? </text>
+  <text x="460" y="410" fill="#3498db" font-family="Arial" font-size="13">Register</text>
+</svg>

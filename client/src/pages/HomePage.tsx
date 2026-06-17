@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Product, getProducts } from '../services/api';
+import { trackPageView } from '../services/tracking';
 import ProductCard from '../components/ProductCard';
 
 function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    trackPageView('/');
+  }, []);
 
   useEffect(() => {
     getProducts()
