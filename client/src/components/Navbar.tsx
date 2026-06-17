@@ -1,9 +1,8 @@
-import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
-  const { user, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -17,13 +16,12 @@ function Navbar() {
         <Link to="/">Demo Store</Link>
       </div>
       <div className="navbar-links">
-        <Link to="/">Products</Link>
-        {user ? (
+        <Link to="/products">Products</Link>
+        {isAuthenticated ? (
           <>
             <Link to="/cart">Cart</Link>
             <Link to="/admin">Admin</Link>
-            <span className="navbar-user">{user.email}</span>
-            <button onClick={handleLogout} className="btn-link">Logout</button>
+            <button className="btn-link" onClick={handleLogout}>Logout</button>
           </>
         ) : (
           <>

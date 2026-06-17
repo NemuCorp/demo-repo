@@ -1,98 +1,78 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as api from '../services/api';
+import { User } from '../types';
 
 interface AuthState {
-  user: api.User | null;
-  loading: boolean;
-  error: string | null;
-}
-
-interface AuthContextType extends AuthState {
+  user: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  clearError: () => void;
+  isAuthenticated: boolean;
+  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    error: null,
-  });
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const clearError = useCallback(() => {
-    setState((s) => ({ ...s, error: null }));
+  const doLogin = useCallback(async (email: string, password: string) => {
+    const data = await api.login(email, password);
+    localStorage.setItem('auth_token', data.token);
+    setUser({ id: data.session.user_id, email, created_at: data.session.created_at, updated_at: '' });
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    setState((s) => ({ ...s, loading: true, error: null }));
-    try {
-      const data = await api.login(email, password);
-      const user: api.User = { id: data.session.user_id, email, created_at: data.session.created_at };
-      api.setStoredUser(user);
-      setState({
-        user,
-        loading: false,
-        error: null,
-      });
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        loading: false,
-        error: err instanceof Error ? err.message : 'Login failed',
-      }));
-      throw err;
-    }
+  const doRegister = useCallback(async (email: string, password: string) => {
+    const data = await api.register(email, password);
+    setUser(data.user);
   }, []);
 
-  const register = useCallback(async (email: string, password: string) => {
-    setState((s) => ({ ...s, loading: true, error: null }));
-    try {
-      await api.register(email, password);
-      await login(email, password);
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        loading: false,
-        error: err instanceof Error ? err.message : 'Registration failed',
-      }));
-      throw err;
-    }
-  }, [login]);
-
-  const logout = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true }));
+  const doLogout = useCallback(async () => {
     try {
       await api.logout();
-    } finally {
-      api.clearStoredUser();
-      setState({ user: null, loading: false, error: null });
+    } catch {
+      // ignore errors on logout
     }
+    localStorage.removeItem('auth_token');
+    setUser(null);
   }, []);
 
   useEffect(() => {
-    if (api.isLoggedIn()) {
-      const storedUser = api.getStoredUser();
-      setState({ user: storedUser, loading: false, error: null });
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      api.getCart().then(() => {
+        setUser({ id: 0, email: '', created_at: '', updated_at: '' });
+      }).catch(() => {
+        localStorage.removeItem('auth_token');
+      }).finally(() => {
+        setLoading(false);
+      });
     } else {
-      setState({ user: null, loading: false, error: null });
+      setLoading(false);
     }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, clearError }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login: doLogin,
+        register: doRegister,
+        logout: doLogout,
+        isAuthenticated: !!localStorage.getItem('auth_token'),
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  return ctx;
 }
