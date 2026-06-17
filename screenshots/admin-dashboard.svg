@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#f5f5f5"/>
+  <!-- Navbar -->
+  <rect x="0" y="0" width="800" height="50" fill="#2c3e50"/>
+  <text x="20" y="32" fill="white" font-family="Arial" font-size="18" font-weight="bold">Demo Store</text>
+  <text x="600" y="32" fill="white" font-family="Arial" font-size="14">Products</text>
+  <text x="680" y="32" fill="white" font-family="Arial" font-size="14">Cart</text>
+  <text x="740" y="32" fill="white" font-family="Arial" font-size="14">Admin</text>
+  <!-- Admin Dashboard -->
+  <text x="30" y="90" fill="#333" font-family="Arial" font-size="24" font-weight="bold">Admin Dashboard</text>
+  <!-- Stats cards -->
+  <g transform="translate(30, 120)">
+    <rect width="230" height="100" rx="8" fill="white" stroke="#ddd"/>
+    <text x="20" y="35" fill="#666" font-family="Arial" font-size="14">Total Products</text>
+    <text x="20" y="70" fill="#2c3e50" font-family="Arial" font-size="32" font-weight="bold">24</text>
+  </g>
+  <g transform="translate(285, 120)">
+    <rect width="230" height="100" rx="8" fill="white" stroke="#ddd"/>
+    <text x="20" y="35" fill="#666" font-family="Arial" font-size="14">Total Users</text>
+    <text x="20" y="70" fill="#2c3e50" font-family="Arial" font-size="32" font-weight="bold">156</text>
+  </g>
+  <g transform="translate(540, 120)">
+    <rect width="230" height="100" rx="8" fill="white" stroke="#ddd"/>
+    <text x="20" y="35" fill="#666" font-family="Arial" font-size="14">Cart Items</text>
+    <text x="20" y="70" fill="#2c3e50" font-family="Arial" font-size="32" font-weight="bold">47</text>
+  </g>
+  <!-- Quick actions -->
+  <text x="30" y="270" fill="#333" font-family="Arial" font-size="18" font-weight="bold">Quick Actions</text>
+  <g transform="translate(30, 290)">
+    <rect width="230" height="60" rx="8" fill="#3498db"/>
+    <text x="115" y="38" fill="white" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Manage Products</text>
+  </g>
+</svg>
