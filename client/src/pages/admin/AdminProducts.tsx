@@ -1,5 +1,6 @@
 import React, { useEffect, useState, FormEvent } from 'react';
 import { Product, getProducts, createProduct } from '../../services/api';
+import { trackPageView, trackProductCreate } from '../../services/tracking';
 
 function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,6 +26,7 @@ function AdminProducts() {
   };
 
   useEffect(() => {
+    trackPageView('/admin/products');
     fetchProducts();
   }, []);
 
@@ -42,6 +44,7 @@ function AdminProducts() {
         image_path: imagePath,
         stock: parseInt(stock, 10) || 0,
       });
+      trackProductCreate(name);
       setSubmitSuccess(true);
       setName('');
       setDescription('');

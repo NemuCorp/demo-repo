@@ -10,6 +10,8 @@ import (
 	"github.com/NemuCorp/demo-repo/server/myerrors"
 )
 
+const defaultPageSize = 20
+
 type ProductHandler struct {
 	DB *db.ProductDB
 }
@@ -27,17 +29,17 @@ type CreateProductRequest struct {
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
-	limit := 20
-	offset := 0
-
-	if l, err := strconv.Atoi(c.DefaultQuery("limit", "20")); err == nil && l > 0 && l <= 100 {
-		limit = l
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", strconv.Itoa(defaultPageSize)))
+	if page < 1 {
+		page = 1
 	}
-	if o, err := strconv.Atoi(c.DefaultQuery("offset", "0")); err == nil && o >= 0 {
-		offset = o
+	if size < 1 {
+		size = defaultPageSize
 	}
+	offset := (page - 1) * size
 
-	products, err := h.DB.ListProducts(limit, offset)
+	products, err := h.DB.ListProductsPaginated(size, offset)
 	if err != nil {
 		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
 		return
@@ -47,7 +49,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 		products = []db.Product{}
 	}
 
-	JSONSuccess(c, http.StatusOK, gin.H{"products": products, "limit": limit, "offset": offset})
+	JSONSuccess(c, http.StatusOK, gin.H{"products": products})
 }
 
 func (h *ProductHandler) Get(c *gin.Context) {

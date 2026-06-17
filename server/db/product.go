@@ -9,11 +9,12 @@ import (
 )
 
 type ProductDB struct {
-	createProduct  *sql.Stmt
-	getProductByID *sql.Stmt
-	listProducts   *sql.Stmt
-	updateProduct  *sql.Stmt
-	deleteProduct  *sql.Stmt
+	createProduct       *sql.Stmt
+	getProductByID      *sql.Stmt
+	listProducts        *sql.Stmt
+	listProductsPaginated *sql.Stmt
+	updateProduct       *sql.Stmt
+	deleteProduct       *sql.Stmt
 }
 
 func NewProductDB(conn *sql.DB) (*ProductDB, error) {
@@ -46,6 +47,15 @@ func NewProductDB(conn *sql.DB) (*ProductDB, error) {
 		return nil, err
 	}
 	p.listProducts = stmt
+
+	stmt, err = conn.Prepare(`
+		SELECT id, name, description, price, image_path, stock, created_at, updated_at
+		FROM products ORDER BY id LIMIT $1 OFFSET $2
+	`)
+	if err != nil {
+		return nil, err
+	}
+	p.listProductsPaginated = stmt
 
 	stmt, err = conn.Prepare(`
 		UPDATE products SET name = $2, description = $3, price = $4, image_path = $5, stock = $6, updated_at = NOW()
@@ -118,6 +128,31 @@ func (p *ProductDB) ListProducts(limit, offset int) ([]Product, error) {
 	defer rows.Close()
 
 	products := make([]Product, 0)
+	for rows.Next() {
+		var prod Product
+		var desc, imagePath sql.NullString
+		if err := rows.Scan(&prod.ID, &prod.Name, &desc, &prod.Price, &imagePath, &prod.Stock, &prod.CreatedAt, &prod.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if desc.Valid {
+			prod.Description = desc.String
+		}
+		if imagePath.Valid {
+			prod.ImagePath = imagePath.String
+		}
+		products = append(products, prod)
+	}
+	return products, rows.Err()
+}
+
+func (p *ProductDB) ListProductsPaginated(limit, offset int) ([]Product, error) {
+	rows, err := p.listProductsPaginated.Query(limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []Product
 	for rows.Next() {
 		var prod Product
 		var desc, imagePath sql.NullString
