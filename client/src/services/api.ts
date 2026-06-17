@@ -1,4 +1,5 @@
 import { AuthResponse, CartItem, Product, User } from '../types';
+export type { AuthResponse, CartItem, Product, User };
 
 const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
