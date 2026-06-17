@@ -15,7 +15,7 @@ type DB struct {
 	Tracking *TrackingDB
 }
 
-func Init(connStr string) (*DB, error) {
+func Open(connStr string) (*DB, error) {
 	conn, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("db open: %w", err)
@@ -25,31 +25,47 @@ func Init(connStr string) (*DB, error) {
 		return nil, fmt.Errorf("db ping: %w", err)
 	}
 
-	db := &DB{Conn: conn}
+	return &DB{Conn: conn}, nil
+}
 
-	authDB, err := NewAuthDB(conn)
+func (db *DB) PrepareStatements() error {
+	authDB, err := NewAuthDB(db.Conn)
 	if err != nil {
-		return nil, fmt.Errorf("auth db init: %w", err)
+		return fmt.Errorf("auth db init: %w", err)
 	}
 	db.Auth = authDB
 
-	cartDB, err := NewCartDB(conn)
+	cartDB, err := NewCartDB(db.Conn)
 	if err != nil {
-		return nil, fmt.Errorf("cart db init: %w", err)
+		return fmt.Errorf("cart db init: %w", err)
 	}
 	db.Cart = cartDB
 
-	productDB, err := NewProductDB(conn)
+	productDB, err := NewProductDB(db.Conn)
 	if err != nil {
-		return nil, fmt.Errorf("product db init: %w", err)
+		return fmt.Errorf("product db init: %w", err)
 	}
 	db.Product = productDB
 
-	trackingDB, err := NewTrackingDB(conn)
+	trackingDB, err := NewTrackingDB(db.Conn)
 	if err != nil {
-		return nil, fmt.Errorf("tracking db init: %w", err)
+		return fmt.Errorf("tracking db init: %w", err)
 	}
 	db.Tracking = trackingDB
+
+	return nil
+}
+
+func Init(connStr string) (*DB, error) {
+	db, err := Open(connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.PrepareStatements(); err != nil {
+		db.Close()
+		return nil, err
+	}
 
 	return db, nil
 }

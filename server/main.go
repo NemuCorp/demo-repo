@@ -24,9 +24,9 @@ func init() {
 	}
 
 	var err error
-	database, err = db.Init(connStr)
+	database, err = db.Open(connStr)
 	if err != nil {
-		logger.Error.Fatalf("Failed to initialize database: %v", err)
+		logger.Error.Fatalf("Failed to open database: %v", err)
 	}
 }
 
@@ -36,6 +36,10 @@ func main() {
 	if len(os.Args) > 1 {
 		runCmd(database)
 		return
+	}
+
+	if err := database.PrepareStatements(); err != nil {
+		logger.Error.Fatalf("Failed to initialize database: %v", err)
 	}
 
 	authHandler := handler.NewAuthHandler(database.Auth)
