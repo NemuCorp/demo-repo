@@ -92,7 +92,26 @@ demo-repo/
 
 ## Setup & Running
 
-### Prerequisites
+### Quick Start with Docker Compose
+
+The fastest way to run the entire stack is with a single command:
+
+```bash
+git clone https://github.com/NemuCorp/demo-repo.git
+cd demo-repo
+docker compose up
+```
+
+This builds and starts all three services (PostgreSQL, Go backend, React frontend). Once running:
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- API: [http://localhost:8080](http://localhost:8080)
+
+Database migrations run automatically on startup. To stop: `docker compose down`.
+
+### Manual Setup
+
+#### Prerequisites
 
 - **Go 1.21+** — [Download](https://go.dev/dl/)
 - **Node.js 18+** and **npm** — [Download](https://nodejs.org/)
