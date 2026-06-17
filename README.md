@@ -1,175 +1,178 @@
-# Demo Store
+# DemoRepo
 
-A full-stack ecommerce application built with React + TypeScript on the frontend and Go + Gin on the backend, backed by PostgreSQL. Browse products, manage a shopping cart, and administer your product catalog — all through a clean, responsive web interface.
+A full-stack e-commerce web application built with React, TypeScript, Go, and PostgreSQL. Browse products, manage a shopping cart, and handle user authentication — all in one clean monorepo.
 
 ---
 
 ## Screenshots
 
 ### Home Page — Product Catalog
+
 ![Home Page](screenshots/home-page.svg)
 
-Browse all available products in a responsive grid layout with pricing and stock information.
+Browse all available products in a responsive grid layout. Each product card shows the name, price, stock status, and an image placeholder.
 
 ### Product Detail Page
+
 ![Product Detail](screenshots/product-page.svg)
 
-View detailed product information, including description, price, and stock availability. Add items to your cart directly from this page.
+View detailed information about a product, including its description, price, stock availability, and an image. Authenticated users can add items to their cart directly from this page.
 
 ### Shopping Cart
+
 ![Cart](screenshots/cart-page.svg)
 
-Manage your cart with per-item quantity controls, subtotals, and a running total. Requires authentication.
+Review and manage items in your cart. Update quantities or remove items before proceeding to checkout.
 
-### Login Page
-![Login](screenshots/login-page.svg)
+### Login & Register
 
-Sign in to your account to access cart functionality and the admin dashboard.
+| Login | Register |
+|-------|----------|
+| ![Login](screenshots/login-page.svg) | ![Register](screenshots/register-page.svg) |
 
-### Register Page
-![Register](screenshots/register-page.svg)
-
-Create a new account with email and password (minimum 6 characters).
+Secure authentication with hashed passwords and session tokens. Users can register a new account or log in with existing credentials.
 
 ### Admin Dashboard
+
 ![Admin Dashboard](screenshots/admin-dashboard.svg)
 
-Overview of your store with quick access to product management.
-
-### Admin — Product Management
-![Admin Products](screenshots/admin-products.svg)
-
-View all products in a table and create new products via a form interface.
-
----
+Administrators can manage products — create, edit, and delete listings — from a dedicated admin panel.
 
 ## Features
 
-- **Product Catalog** — Browse all products with a responsive grid layout
-- **Product Details** — View detailed information for each product (name, description, price, stock)
-- **User Authentication** — Register, login, and logout with bcrypt-hashed passwords and session-based Bearer token auth
-- **Shopping Cart** — Add, update, and remove items; view per-item subtotals and cart total
-- **Admin Panel** — Dashboard with product management: view products in a table, create new products
-- **CLI Database Management** — Run migrations, rollbacks, and clean the database from the command line
+### For Customers
+- **Product Catalog** — Browse all available products with name, price, stock, and images.
+- **Product Details** — View in-depth product information, including descriptions and stock levels.
+- **Shopping Cart** — Add, update, and remove items from a persistent cart tied to your account.
+- **User Authentication** — Register an account, log in, and log out securely with bcrypt-hashed passwords.
+- **Multiple Sessions** — Stay logged in across multiple devices with session token support.
 
----
+### For Administrators
+- **Admin Dashboard** — Protected admin area for managing store content.
+- **Product Management** — Create new products, edit existing ones, and remove discontinued items.
 
-## Use Cases
-
-| Use Case | Description |
-|----------|-------------|
-| **Online Storefront** | List and sell products with a public-facing catalog |
-| **Inventory Management** | Track product stock levels and manage listings via the admin panel |
-| **Proof of Concept** | Use as a starting template for full-stack Go + React projects |
-| **Learning Resource** | Demonstrates session-based auth, raw SQL with PostgreSQL, and React + TypeScript best practices |
-
----
+### Use Cases
+- **Small to medium online stores** — Launch a product catalog with shopping cart functionality quickly.
+- **Learning full-stack development** — Study a real-world monorepo combining React, Go, and PostgreSQL.
+- **Bootstrapping an e-commerce MVP** — Use the project as a starting point for a custom online shop.
+- **Testing frontend/backend integration** — Explore how a React SPA communicates with a Go REST API.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, TypeScript, React Router v6 |
-| Backend | Go 1.21, Gin framework |
-| Database | PostgreSQL (raw SQL with prepared statements) |
-| Auth | bcrypt + SHA-256 session tokens |
-| Styling | Plain CSS (responsive) |
+| Layer    | Technology                           |
+|----------|--------------------------------------|
+| Frontend | React 18, TypeScript, React Router 6 |
+| Backend  | Go 1.21, Gin web framework           |
+| Database | PostgreSQL, raw SQL (no ORM)         |
+| Auth     | bcrypt password hashing, session tokens |
+| Logging  | `log/slog` (structured logging)      |
 
----
+## Project Structure
 
-## Getting Started
+```
+demo-repo/
+├── client/                 # React + TypeScript frontend
+│   ├── public/             # Static assets
+│   └── src/
+│       ├── components/     # Reusable UI components (Navbar, ProductCard, ProtectedRoute)
+│       ├── contexts/       # React contexts (AuthContext)
+│       ├── pages/          # Page components (Home, Product, Cart, Login, Register, Admin)
+│       ├── services/       # API client and data-fetching logic
+│       ├── App.tsx         # Root component with routes
+│       └── index.tsx       # Entry point
+├── server/                 # Go + Gin backend
+│   ├── db/                 # Database access, prepared statements, migrations
+│   ├── handler/            # HTTP handlers (auth, cart, product)
+│   ├── logger/             # Structured logging setup
+│   ├── myerrors/           # Sentinel error types
+│   ├── main.go             # Server entry point and route configuration
+│   └── cmd.go              # CLI commands (migrate, clean, import, export)
+└── screenshots/            # Application screenshots
+```
+
+## Setup & Running
 
 ### Prerequisites
 
-- **Go** 1.21 or newer
-- **Node.js** 18 or newer with npm
-- **PostgreSQL** running locally
+- **Go 1.21+** — [Download](https://go.dev/dl/)
+- **Node.js 18+** and **npm** — [Download](https://nodejs.org/)
+- **PostgreSQL** — Running instance (local or remote)
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/NemuCorp/demo-repo.git
 cd demo-repo
 ```
 
-### 2. Set Up the Database
+### 2. Set up the database
 
-Create the database and run the initial migration:
-
-```bash
-# Create the database
-createdb demorepo
-
-# Apply the migration
-psql "postgres://postgres:postgres@localhost:5432/demorepo?sslmode=disable" \
-  < server/db/migrations/001_initial.sql
-```
-
-Alternatively, start the backend server first and use the CLI:
+Make sure PostgreSQL is running, then set the connection string:
 
 ```bash
-cd server
-go run . up     # Run all pending migrations
-go run . down   # Rollback the last migration
-go run . clean  # Drop all tables
-```
-
-### 3. Start the Backend
-
-```bash
-cd server
-
-# Optional: set environment variables (defaults shown)
 export DATABASE_URL="postgres://postgres:postgres@localhost:5432/demorepo?sslmode=disable"
-export PORT="8080"
+```
 
-# Start the server
+Run database migrations (from the `server/` directory):
+
+```bash
+cd server
+go run . up
+```
+
+> **Available CLI commands:** `up` (run migrations), `down` (rollback), `clean` (drop all tables), `import`, `export`
+
+### 3. Start the backend server
+
+```bash
+cd server
 go run .
 ```
 
 The API server starts on `http://localhost:8080`.
 
-### 4. Start the Frontend
+### 4. Start the frontend client
+
+In a separate terminal:
 
 ```bash
 cd client
-
-# Install dependencies
 npm install
-
-# Start the development server
 npm start
 ```
 
-The React dev server starts on `http://localhost:3000` and proxies API requests to the backend.
+The React dev server starts on `http://localhost:3000` and proxies API requests to the Go backend.
 
-### 5. Open the App
+### Environment Variables
 
-Navigate to [http://localhost:3000](http://localhost:3000) to start browsing.
+| Variable       | Default               | Description                  |
+|----------------|-----------------------|------------------------------|
+| `DATABASE_URL` | (see above)           | PostgreSQL connection string |
+| `PORT`         | `8080`                | Backend server port          |
 
----
+## API Endpoints
 
-## Project Structure
+### Authentication
+| Method | Path             | Auth     | Description        |
+|--------|------------------|----------|--------------------|
+| POST   | `/api/auth/register` | No   | Create a new account |
+| POST   | `/api/auth/login`    | No   | Log in, get session   |
+| POST   | `/api/auth/logout`   | Yes  | End current session   |
 
-```
-demo-repo/
-├── client/                   React + TypeScript frontend
-│   ├── src/
-│   │   ├── components/       Reusable UI: Navbar, ProductCard, ProtectedRoute
-│   │   ├── contexts/         AuthContext (authentication state management)
-│   │   ├── pages/            Route-level page components
-│   │   │   └── admin/        Admin dashboard and product management
-│   │   └── services/         API client functions
-│   └── package.json          Dependencies and proxy configuration
-├── server/                   Go + Gin backend
-│   ├── handler/              HTTP request handlers (auth, product, cart)
-│   ├── db/                   Database access layer and migrations
-│   ├── myerrors/             Sentinel error types
-│   └── logger/               Logging utilities
-└── screenshots/              Page screenshots
-```
+### Products
+| Method | Path              | Auth | Description            |
+|--------|-------------------|------|------------------------|
+| GET    | `/api/products`   | No   | List all products      |
+| GET    | `/api/products/:id` | No | Get product by ID      |
+| POST   | `/api/products`   | No   | Create a new product   |
 
----
+### Cart
+| Method | Path                    | Auth | Description              |
+|--------|-------------------------|------|--------------------------|
+| GET    | `/api/cart`             | Yes  | View current user's cart |
+| POST   | `/api/cart`             | Yes  | Add item to cart         |
+| PUT    | `/api/cart/:productId`  | Yes  | Update item quantity     |
+| DELETE | `/api/cart/:productId`  | Yes  | Remove item from cart    |
 
 ## Available Scripts
 
