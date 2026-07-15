@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/NemuCorp/demo-repo/server/db"
@@ -55,6 +57,17 @@ func main() {
 
 	r := gin.Default()
 
+	allowedOrigins := corsAllowedOrigins()
+	if len(allowedOrigins) > 0 {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     allowedOrigins,
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+		}))
+	}
+
 	api := r.Group("/api")
 	{
 		auth := api.Group("/auth")
@@ -102,4 +115,19 @@ func main() {
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
 		logger.Error.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+func corsAllowedOrigins() []string {
+	val := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if val == "" {
+		return nil
+	}
+	var origins []string
+	for _, o := range strings.Split(val, ",") {
+		o = strings.TrimSpace(o)
+		if o != "" {
+			origins = append(origins, o)
+		}
+	}
+	return origins
 }

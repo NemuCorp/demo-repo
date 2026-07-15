@@ -50,7 +50,7 @@ func AuthMiddleware(authDB *db.AuthDB) gin.HandlerFunc {
 
 		c.Set("user_id", user.ID)
 		c.Set("user_email", user.Email)
-		c.Set("is_admin", user.Email == AdminEmail)
+		c.Set("is_admin", user.IsAdmin)
 		c.Next()
 	}
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { Product } from '../../types';
@@ -28,6 +28,14 @@ function ProductManagement() {
       .finally(() => setLoading(false));
   };
 
+  const resetForm = useCallback(() => {
+    setName('');
+    setDescription('');
+    setPrice('');
+    setImagePath('');
+    setStock('');
+  }, []);
+
   useEffect(() => {
     trackPageView('/admin/products');
     fetchProducts();
@@ -45,16 +53,10 @@ function ProductManagement() {
           setStock(p.stock.toString());
         })
         .catch((err) => setError(err.message));
+    } else {
+      resetForm();
     }
-  }, [editId, isEditing]);
-
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setPrice('');
-    setImagePath('');
-    setStock('');
-  };
+  }, [editId, isEditing, resetForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -181,7 +181,6 @@ func (p *ProductDB) UpdateProduct(id int, name, description string, price float6
 	return prod, nil
 }
 
-func (p *ProductDB) DeleteProduct(id int) error {
-	_, err := p.deleteProduct.Exec(id)
-	return err
+func (p *ProductDB) DeleteProduct(id int) (sql.Result, error) {
+	return p.deleteProduct.Exec(id)
 }

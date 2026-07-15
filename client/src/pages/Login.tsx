@@ -77,7 +77,16 @@ function Login() {
           </button>
         </form>
         <p className="auth-switch">
-          Don't have an account? <Link to="/register">Register here</Link>
+          {isAdminView ? (
+            <>
+              Need to create an account?{' '}
+              <a href={`${getNormalSiteUrl()}/register`}>Register on the main site</a>
+            </>
+          ) : (
+            <>
+              Don't have an account? <Link to="/register">Register here</Link>
+            </>
+          )}
         </p>
       </div>
     </div>

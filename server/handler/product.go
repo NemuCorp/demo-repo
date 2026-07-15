@@ -118,8 +118,19 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.DeleteProduct(id); err != nil {
+	result, err := h.DB.DeleteProduct(id)
+	if err != nil {
 		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+	if rows == 0 {
+		JSONError(c, http.StatusNotFound, myerrors.ErrProductNotFound.Error())
 		return
 	}
 
