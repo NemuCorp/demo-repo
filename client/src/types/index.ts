@@ -1,6 +1,7 @@
 export interface User {
   id: number;
   email: string;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -15,6 +16,7 @@ export interface Session {
 export interface AuthResponse {
   token: string;
   session: Session;
+  is_admin?: boolean;
 }
 
 export interface Product {

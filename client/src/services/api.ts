@@ -132,5 +132,31 @@ export interface DashboardMetrics {
 }
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  return request<DashboardMetrics>('/api/admin/stats');
+  return request<DashboardMetrics>('/admin/stats');
+}
+
+export async function getCurrentUser(): Promise<{ user: User }> {
+  return request<{ user: User }>('/auth/me');
+}
+
+export async function updateProduct(
+  id: number,
+  data: {
+    name: string;
+    description: string;
+    price: number;
+    image_path: string;
+    stock: number;
+  }
+): Promise<{ product: Product }> {
+  return request<{ product: Product }>(`/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProduct(id: number): Promise<{ message: string }> {
+  return request<{ message: string }>(`/products/${id}`, {
+    method: 'DELETE',
+  });
 }

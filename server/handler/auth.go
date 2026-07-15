@@ -16,12 +16,30 @@ import (
 	"github.com/NemuCorp/demo-repo/server/myerrors"
 )
 
+const AdminEmail = "admin@admin.com"
+
 type AuthHandler struct {
 	DB *db.AuthDB
 }
 
 func NewAuthHandler(authDB *db.AuthDB) *AuthHandler {
 	return &AuthHandler{DB: authDB}
+}
+
+func SeedAdminUser(authDB *db.AuthDB) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	_, err = authDB.CreateUser(AdminEmail, string(hash))
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 type RegisterRequest struct {
@@ -38,6 +56,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		JSONError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if req.Email == AdminEmail {
+		JSONError(c, http.StatusBadRequest, "cannot register reserved admin email")
 		return
 	}
 
@@ -99,8 +122,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	JSONSuccess(c, http.StatusOK, gin.H{
-		"token":   plainToken,
-		"session": session,
+		"token":    plainToken,
+		"session":  session,
+		"is_admin": user.Email == AdminEmail,
 	})
 }
 
@@ -117,4 +141,33 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	JSONSuccess(c, http.StatusOK, gin.H{"message": "logged out"})
+}
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID, ok := GetUserID(c)
+	if !ok {
+		JSONError(c, http.StatusUnauthorized, myerrors.ErrUnauthorized.Error())
+		return
+	}
+
+	user, err := h.DB.GetUserByID(userID)
+	if err != nil {
+		if err == myerrors.ErrUserNotFound {
+			JSONError(c, http.StatusUnauthorized, myerrors.ErrUnauthorized.Error())
+			return
+		}
+		logger.Error.Println("user lookup failed:", err)
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+
+	JSONSuccess(c, http.StatusOK, gin.H{
+		"user": gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"is_admin":   user.Email == AdminEmail,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
+		},
+	})
 }

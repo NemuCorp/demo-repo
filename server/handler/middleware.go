@@ -40,7 +40,38 @@ func AuthMiddleware(authDB *db.AuthDB) gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", session.UserID)
+		user, err := authDB.GetUserByID(session.UserID)
+		if err != nil {
+			logger.Error.Println("user lookup failed:", err)
+			JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+			c.Abort()
+			return
+		}
+
+		c.Set("user_id", user.ID)
+		c.Set("user_email", user.Email)
+		c.Set("is_admin", user.Email == AdminEmail)
 		c.Next()
 	}
+}
+
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		isAdmin, ok := IsAdmin(c)
+		if !ok || !isAdmin {
+			JSONError(c, http.StatusForbidden, myerrors.ErrForbidden.Error())
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func IsAdmin(c *gin.Context) (bool, bool) {
+	val, exists := c.Get("is_admin")
+	if !exists {
+		return false, false
+	}
+	isAdmin, ok := val.(bool)
+	return isAdmin, ok
 }

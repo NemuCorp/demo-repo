@@ -42,11 +42,16 @@ func main() {
 		logger.Error.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	if err := handler.SeedAdminUser(database.Auth); err != nil {
+		logger.Error.Fatalf("Failed to seed admin user: %v", err)
+	}
+
 	authHandler := handler.NewAuthHandler(database.Auth)
 	cartHandler := handler.NewCartHandler(database.Cart)
 	productHandler := handler.NewProductHandler(database.Product)
 	trackingHandler := handler.NewTrackingHandler(database.Tracking)
 	authMiddleware := handler.AuthMiddleware(database.Auth)
+	adminMiddleware := handler.AdminMiddleware()
 
 	r := gin.Default()
 
@@ -57,13 +62,16 @@ func main() {
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/logout", authMiddleware, authHandler.Logout)
+			auth.GET("/me", authMiddleware, authHandler.Me)
 		}
 
 		products := api.Group("/products")
 		{
 			products.GET("", productHandler.List)
 			products.GET("/:id", productHandler.Get)
-			products.POST("", productHandler.Create)
+			products.POST("", authMiddleware, adminMiddleware, productHandler.Create)
+			products.PUT("/:id", authMiddleware, adminMiddleware, productHandler.Update)
+			products.DELETE("/:id", authMiddleware, adminMiddleware, productHandler.Delete)
 		}
 
 		cart := api.Group("/cart", authMiddleware)
@@ -79,7 +87,7 @@ func main() {
 			tracking.POST("", trackingHandler.Track)
 		}
 
-		admin := api.Group("/admin", authMiddleware)
+		admin := api.Group("/admin", authMiddleware, adminMiddleware)
 		{
 			admin.GET("/stats", trackingHandler.Dashboard)
 		}

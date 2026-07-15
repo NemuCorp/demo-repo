@@ -9,12 +9,12 @@ import (
 )
 
 type ProductDB struct {
-	createProduct       *sql.Stmt
-	getProductByID      *sql.Stmt
-	listProducts        *sql.Stmt
+	createProduct         *sql.Stmt
+	getProductByID        *sql.Stmt
+	listProducts          *sql.Stmt
 	listProductsPaginated *sql.Stmt
-	updateProduct       *sql.Stmt
-	deleteProduct       *sql.Stmt
+	updateProduct         *sql.Stmt
+	deleteProduct         *sql.Stmt
 }
 
 func NewProductDB(conn *sql.DB) (*ProductDB, error) {
