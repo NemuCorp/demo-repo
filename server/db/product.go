@@ -9,12 +9,12 @@ import (
 )
 
 type ProductDB struct {
-	createProduct       *sql.Stmt
-	getProductByID      *sql.Stmt
-	listProducts        *sql.Stmt
+	createProduct         *sql.Stmt
+	getProductByID        *sql.Stmt
+	listProducts          *sql.Stmt
 	listProductsPaginated *sql.Stmt
-	updateProduct       *sql.Stmt
-	deleteProduct       *sql.Stmt
+	updateProduct         *sql.Stmt
+	deleteProduct         *sql.Stmt
 }
 
 func NewProductDB(conn *sql.DB) (*ProductDB, error) {
@@ -181,7 +181,6 @@ func (p *ProductDB) UpdateProduct(id int, name, description string, price float6
 	return prod, nil
 }
 
-func (p *ProductDB) DeleteProduct(id int) error {
-	_, err := p.deleteProduct.Exec(id)
-	return err
+func (p *ProductDB) DeleteProduct(id int) (sql.Result, error) {
+	return p.deleteProduct.Exec(id)
 }

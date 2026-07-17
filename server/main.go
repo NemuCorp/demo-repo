@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/NemuCorp/demo-repo/server/db"
@@ -42,13 +44,29 @@ func main() {
 		logger.Error.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	if err := handler.SeedAdminUser(database.Auth); err != nil {
+		logger.Error.Fatalf("Failed to seed admin user: %v", err)
+	}
+
 	authHandler := handler.NewAuthHandler(database.Auth)
 	cartHandler := handler.NewCartHandler(database.Cart)
 	productHandler := handler.NewProductHandler(database.Product)
 	trackingHandler := handler.NewTrackingHandler(database.Tracking)
 	authMiddleware := handler.AuthMiddleware(database.Auth)
+	adminMiddleware := handler.AdminMiddleware()
 
 	r := gin.Default()
+
+	allowedOrigins := corsAllowedOrigins()
+	if len(allowedOrigins) > 0 {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     allowedOrigins,
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+		}))
+	}
 
 	api := r.Group("/api")
 	{
@@ -57,13 +75,16 @@ func main() {
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/logout", authMiddleware, authHandler.Logout)
+			auth.GET("/me", authMiddleware, authHandler.Me)
 		}
 
 		products := api.Group("/products")
 		{
 			products.GET("", productHandler.List)
 			products.GET("/:id", productHandler.Get)
-			products.POST("", productHandler.Create)
+			products.POST("", authMiddleware, adminMiddleware, productHandler.Create)
+			products.PUT("/:id", authMiddleware, adminMiddleware, productHandler.Update)
+			products.DELETE("/:id", authMiddleware, adminMiddleware, productHandler.Delete)
 		}
 
 		cart := api.Group("/cart", authMiddleware)
@@ -79,7 +100,7 @@ func main() {
 			tracking.POST("", trackingHandler.Track)
 		}
 
-		admin := api.Group("/admin", authMiddleware)
+		admin := api.Group("/admin", authMiddleware, adminMiddleware)
 		{
 			admin.GET("/stats", trackingHandler.Dashboard)
 		}
@@ -94,4 +115,19 @@ func main() {
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
 		logger.Error.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+func corsAllowedOrigins() []string {
+	val := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if val == "" {
+		return nil
+	}
+	var origins []string
+	for _, o := range strings.Split(val, ",") {
+		o = strings.TrimSpace(o)
+		if o != "" {
+			origins = append(origins, o)
+		}
+	}
+	return origins
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -82,4 +83,56 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	}
 
 	JSONSuccess(c, http.StatusCreated, gin.H{"product": product})
+}
+
+func (h *ProductHandler) Update(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		JSONError(c, http.StatusBadRequest, "invalid product id")
+		return
+	}
+
+	var req CreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		JSONError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	product, err := h.DB.UpdateProduct(id, req.Name, req.Description, req.Price, req.ImagePath, req.Stock)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			JSONError(c, http.StatusNotFound, myerrors.ErrProductNotFound.Error())
+			return
+		}
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+
+	JSONSuccess(c, http.StatusOK, gin.H{"product": product})
+}
+
+func (h *ProductHandler) Delete(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		JSONError(c, http.StatusBadRequest, "invalid product id")
+		return
+	}
+
+	result, err := h.DB.DeleteProduct(id)
+	if err != nil {
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+	if rows == 0 {
+		JSONError(c, http.StatusNotFound, myerrors.ErrProductNotFound.Error())
+		return
+	}
+
+	JSONSuccess(c, http.StatusOK, gin.H{"message": "product deleted"})
 }

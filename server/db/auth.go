@@ -10,31 +10,31 @@ import (
 )
 
 type AuthDB struct {
-	createUser     *sql.Stmt
-	getUserByEmail *sql.Stmt
-	getUserByID    *sql.Stmt
-	createSession  *sql.Stmt
-	getSession     *sql.Stmt
-	deleteSession  *sql.Stmt
+	createUser         *sql.Stmt
+	getUserByEmail     *sql.Stmt
+	getUserByID        *sql.Stmt
+	createSession      *sql.Stmt
+	getSession         *sql.Stmt
+	deleteSession      *sql.Stmt
 	deleteUserSessions *sql.Stmt
 }
 
 func NewAuthDB(conn *sql.DB) (*AuthDB, error) {
 	var a AuthDB
 
-	stmt, err := conn.Prepare(`INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at`)
+	stmt, err := conn.Prepare(`INSERT INTO users (email, password_hash, is_admin) VALUES ($1, $2, $3) RETURNING id, email, is_admin, created_at`)
 	if err != nil {
 		return nil, err
 	}
 	a.createUser = stmt
 
-	stmt, err = conn.Prepare(`SELECT id, email, password_hash, created_at, updated_at FROM users WHERE email = $1`)
+	stmt, err = conn.Prepare(`SELECT id, email, password_hash, is_admin, created_at, updated_at FROM users WHERE email = $1`)
 	if err != nil {
 		return nil, err
 	}
 	a.getUserByEmail = stmt
 
-	stmt, err = conn.Prepare(`SELECT id, email, password_hash, created_at, updated_at FROM users WHERE id = $1`)
+	stmt, err = conn.Prepare(`SELECT id, email, password_hash, is_admin, created_at, updated_at FROM users WHERE id = $1`)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +72,7 @@ type User struct {
 	ID           int       `json:"id"`
 	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
+	IsAdmin      bool      `json:"is_admin"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
@@ -84,9 +85,9 @@ type Session struct {
 	ExpiresAt   time.Time `json:"expires_at"`
 }
 
-func (a *AuthDB) CreateUser(email, passwordHash string) (*User, error) {
+func (a *AuthDB) CreateUser(email, passwordHash string, isAdmin bool) (*User, error) {
 	u := &User{}
-	err := a.createUser.QueryRow(email, passwordHash).Scan(&u.ID, &u.Email, &u.CreatedAt)
+	err := a.createUser.QueryRow(email, passwordHash, isAdmin).Scan(&u.ID, &u.Email, &u.IsAdmin, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func (a *AuthDB) CreateUser(email, passwordHash string) (*User, error) {
 
 func (a *AuthDB) GetUserByEmail(email string) (*User, error) {
 	u := &User{}
-	err := a.getUserByEmail.QueryRow(email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	err := a.getUserByEmail.QueryRow(email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.IsAdmin, &u.CreatedAt, &u.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, myerrors.ErrUserNotFound
 	}
@@ -107,7 +108,7 @@ func (a *AuthDB) GetUserByEmail(email string) (*User, error) {
 
 func (a *AuthDB) GetUserByID(id int) (*User, error) {
 	u := &User{}
-	err := a.getUserByID.QueryRow(id).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	err := a.getUserByID.QueryRow(id).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.IsAdmin, &u.CreatedAt, &u.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, myerrors.ErrUserNotFound
 	}

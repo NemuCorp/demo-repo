@@ -143,7 +143,11 @@ go run . up
 
 ### 3. Start the backend server
 
+Optionally set admin credentials before starting the server. If both `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set, an admin account will be seeded automatically:
+
 ```bash
+export ADMIN_EMAIL="admin@example.com"
+export ADMIN_PASSWORD="change-me-in-production"
 cd server
 go run .
 ```
@@ -164,10 +168,13 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 
 ### Environment Variables
 
-| Variable       | Default               | Description                  |
-|----------------|-----------------------|------------------------------|
-| `DATABASE_URL` | (see above)           | PostgreSQL connection string |
-| `PORT`         | `8080`                | Backend server port          |
+| Variable               | Default                                       | Description                                      |
+|------------------------|-----------------------------------------------|--------------------------------------------------|
+| `DATABASE_URL`         | (see above)                                   | PostgreSQL connection string                     |
+| `PORT`                 | `8080`                                        | Backend server port                              |
+| `ADMIN_EMAIL`          | (none)                                        | Email for the seeded admin account               |
+| `ADMIN_PASSWORD`       | (none)                                        | Password for the seeded admin account            |
+| `CORS_ALLOWED_ORIGINS` | (none)                                        | Comma-separated list of allowed CORS origins     |
 
 ## API Endpoints
 
@@ -177,13 +184,16 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 | POST   | `/api/auth/register` | No   | Create a new account |
 | POST   | `/api/auth/login`    | No   | Log in, get session   |
 | POST   | `/api/auth/logout`   | Yes  | End current session   |
+| GET    | `/api/auth/me`       | Yes  | Get current user      |
 
 ### Products
-| Method | Path              | Auth | Description            |
-|--------|-------------------|------|------------------------|
-| GET    | `/api/products`   | No   | List all products      |
-| GET    | `/api/products/:id` | No | Get product by ID      |
-| POST   | `/api/products`   | No   | Create a new product   |
+| Method | Path              | Auth | Admin | Description            |
+|--------|-------------------|------|-------|------------------------|
+| GET    | `/api/products`   | No   | No    | List all products      |
+| GET    | `/api/products/:id` | No | No    | Get product by ID      |
+| POST   | `/api/products`   | Yes  | Yes   | Create a new product   |
+| PUT    | `/api/products/:id` | Yes | Yes   | Update a product       |
+| DELETE | `/api/products/:id` | Yes | Yes   | Delete a product       |
 
 ### Cart
 | Method | Path                    | Auth | Description              |

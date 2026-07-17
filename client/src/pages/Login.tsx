@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getAdminSiteUrl, getNormalSiteUrl } from '../utils/host';
 import { trackPageView, trackLogin } from '../services/tracking';
 
 function Login() {
-  const { login } = useAuth();
+  const { login, isAdminView } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +21,22 @@ function Login() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      const data = await login(email, password);
       trackLogin();
-      navigate('/');
+
+      if (data.is_admin) {
+        if (isAdminView) {
+          navigate('/admin');
+        } else {
+          window.location.href = `${getAdminSiteUrl()}/admin`;
+        }
+      } else {
+        if (isAdminView) {
+          window.location.href = getNormalSiteUrl();
+        } else {
+          navigate('/');
+        }
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -63,7 +77,16 @@ function Login() {
           </button>
         </form>
         <p className="auth-switch">
-          Don't have an account? <Link to="/register">Register here</Link>
+          {isAdminView ? (
+            <>
+              Need to create an account?{' '}
+              <a href={`${getNormalSiteUrl()}/register`}>Register on the main site</a>
+            </>
+          ) : (
+            <>
+              Don't have an account? <Link to="/register">Register here</Link>
+            </>
+          )}
         </p>
       </div>
     </div>

@@ -10,5 +10,6 @@ var (
 	ErrCartEmpty       = errors.New("cart is empty")
 	ErrEmailTaken      = errors.New("email already taken")
 	ErrSessionExpired  = errors.New("session expired")
+	ErrForbidden       = errors.New("forbidden")
 	ErrInternal        = errors.New("internal error")
 )

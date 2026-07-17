@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as api from '../../services/api';
 import { Product } from '../../types';
+import { getNormalSiteUrl } from '../../utils/host';
 import { trackPageView } from '../../services/tracking';
 
 function AdminDashboard() {
@@ -44,7 +45,8 @@ function AdminDashboard() {
 
       <div className="admin-actions">
         <Link to="/admin/products" className="btn btn-primary">Manage Products</Link>
-        <Link to="/admin/products/new" className="btn btn-secondary">Add New Product</Link>
+        <Link to="/admin/products" className="btn btn-secondary">Add New Product</Link>
+        <a className="btn btn-secondary" href={getNormalSiteUrl()}>View Site</a>
       </div>
 
       <h2>Recent Products</h2>

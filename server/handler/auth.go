@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +18,39 @@ import (
 	"github.com/NemuCorp/demo-repo/server/myerrors"
 )
 
+func adminEmail() string {
+	return strings.ToLower(strings.TrimSpace(os.Getenv("ADMIN_EMAIL")))
+}
+
 type AuthHandler struct {
 	DB *db.AuthDB
 }
 
 func NewAuthHandler(authDB *db.AuthDB) *AuthHandler {
 	return &AuthHandler{DB: authDB}
+}
+
+func SeedAdminUser(authDB *db.AuthDB) error {
+	email := adminEmail()
+	password := os.Getenv("ADMIN_PASSWORD")
+	if email == "" || password == "" {
+		logger.Info.Println("ADMIN_EMAIL or ADMIN_PASSWORD not set, skipping admin seed")
+		return nil
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	_, err = authDB.CreateUser(email, string(hash), true)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 type RegisterRequest struct {
@@ -41,6 +70,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	if strings.EqualFold(req.Email, adminEmail()) {
+		JSONError(c, http.StatusBadRequest, "cannot register reserved admin email")
+		return
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		logger.Error.Println("failed to hash password:", err)
@@ -48,7 +82,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.DB.CreateUser(req.Email, string(passwordHash))
+	user, err := h.DB.CreateUser(req.Email, string(passwordHash), false)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 			JSONError(c, http.StatusConflict, myerrors.ErrEmailTaken.Error())
@@ -99,8 +133,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	JSONSuccess(c, http.StatusOK, gin.H{
-		"token":   plainToken,
-		"session": session,
+		"token":    plainToken,
+		"session":  session,
+		"is_admin": user.IsAdmin,
 	})
 }
 
@@ -117,4 +152,33 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	JSONSuccess(c, http.StatusOK, gin.H{"message": "logged out"})
+}
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID, ok := GetUserID(c)
+	if !ok {
+		JSONError(c, http.StatusUnauthorized, myerrors.ErrUnauthorized.Error())
+		return
+	}
+
+	user, err := h.DB.GetUserByID(userID)
+	if err != nil {
+		if err == myerrors.ErrUserNotFound {
+			JSONError(c, http.StatusUnauthorized, myerrors.ErrUnauthorized.Error())
+			return
+		}
+		logger.Error.Println("user lookup failed:", err)
+		JSONError(c, http.StatusInternalServerError, myerrors.ErrInternal.Error())
+		return
+	}
+
+	JSONSuccess(c, http.StatusOK, gin.H{
+		"user": gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"is_admin":   user.IsAdmin,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
+		},
+	})
 }

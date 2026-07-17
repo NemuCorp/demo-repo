@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { Product } from '../../types';
+import { getNormalSiteUrl } from '../../utils/host';
 import { trackPageView, trackProductCreate } from '../../services/tracking';
 
 function ProductManagement() {
@@ -27,6 +28,14 @@ function ProductManagement() {
       .finally(() => setLoading(false));
   };
 
+  const resetForm = useCallback(() => {
+    setName('');
+    setDescription('');
+    setPrice('');
+    setImagePath('');
+    setStock('');
+  }, []);
+
   useEffect(() => {
     trackPageView('/admin/products');
     fetchProducts();
@@ -44,16 +53,10 @@ function ProductManagement() {
           setStock(p.stock.toString());
         })
         .catch((err) => setError(err.message));
+    } else {
+      resetForm();
     }
-  }, [editId, isEditing]);
-
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setPrice('');
-    setImagePath('');
-    setStock('');
-  };
+  }, [editId, isEditing, resetForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,17 +64,24 @@ function ProductManagement() {
     setSuccess('');
     setSubmitting(true);
 
+    const productData = {
+      name,
+      description,
+      price: parseFloat(price),
+      image_path: imagePath,
+      stock: parseInt(stock) || 0,
+    };
+
     try {
-      await api.createProduct({
-        name,
-        description,
-        price: parseFloat(price),
-        image_path: imagePath,
-        stock: parseInt(stock) || 0,
-      });
-      trackProductCreate(name);
-      setSuccess(isEditing ? 'Product updated!' : 'Product created!');
-      resetForm();
+      if (isEditing && editId) {
+        await api.updateProduct(parseInt(editId), productData);
+        setSuccess('Product updated!');
+      } else {
+        await api.createProduct(productData);
+        trackProductCreate(name);
+        setSuccess('Product created!');
+        resetForm();
+      }
       fetchProducts();
     } catch (err: any) {
       setError(err.message);
@@ -80,12 +90,30 @@ function ProductManagement() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) {
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      await api.deleteProduct(id);
+      setSuccess('Product deleted!');
+      fetchProducts();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   if (loading) return <div className="page"><p>Loading products...</p></div>;
 
   return (
     <div className="page admin-products-page">
       <h1>{isEditing ? 'Edit Product' : 'Product Management'}</h1>
-      <Link to="/admin" className="btn btn-secondary">&larr; Back to Dashboard</Link>
+      <div className="admin-actions">
+        <Link to="/admin" className="btn btn-secondary">&larr; Back to Dashboard</Link>
+        <a className="btn btn-secondary" href={getNormalSiteUrl()}>View Site</a>
+      </div>
 
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
@@ -175,6 +203,13 @@ function ProductManagement() {
                 <td>{p.stock}</td>
                 <td>
                   <Link to={`/admin/products/${p.id}`}>Edit</Link>
+                  {' | '}
+                  <button
+                    className="btn-link delete-link"
+                    onClick={() => handleDelete(p.id)}
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}

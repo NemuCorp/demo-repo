@@ -1,13 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as api from '../services/api';
-import { User } from '../types';
+import { isAdminHost } from '../utils/host';
+import { AuthResponse, User } from '../types';
 
 interface AuthState {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthResponse>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  isAdminView: boolean;
   loading: boolean;
 }
 
@@ -20,7 +23,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const doLogin = useCallback(async (email: string, password: string) => {
     const data = await api.login(email, password);
     localStorage.setItem('auth_token', data.token);
-    setUser({ id: data.session.user_id, email, created_at: data.session.created_at, updated_at: '' });
+    setUser({
+      id: data.session.user_id,
+      email,
+      is_admin: data.is_admin,
+      created_at: data.session.created_at,
+      updated_at: '',
+    });
+    return data;
   }, []);
 
   const doRegister = useCallback(async (email: string, password: string) => {
@@ -41,13 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (token) {
-      api.getCart().then(() => {
-        setUser({ id: 0, email: '', created_at: '', updated_at: '' });
-      }).catch(() => {
-        localStorage.removeItem('auth_token');
-      }).finally(() => {
-        setLoading(false);
-      });
+      api.getCurrentUser()
+        .then((data) => {
+          setUser(data.user);
+        })
+        .catch(() => {
+          localStorage.removeItem('auth_token');
+          setUser(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
@@ -60,7 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login: doLogin,
         register: doRegister,
         logout: doLogout,
-        isAuthenticated: !!localStorage.getItem('auth_token'),
+        isAuthenticated: !!user,
+        isAdmin: !!user?.is_admin,
+        isAdminView: isAdminHost(),
         loading,
       }}
     >
