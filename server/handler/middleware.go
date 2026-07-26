@@ -24,8 +24,7 @@ func AuthMiddleware(authDB *db.AuthDB) gin.HandlerFunc {
 		}
 
 		token := header[7:]
-		hash := sha256.Sum256([]byte(token))
-		sessionHash := hex.EncodeToString(hash[:])
+		sessionHash := sha256Sum(token)
 
 		session, err := authDB.GetSession(sessionHash)
 		if errors.Is(err, myerrors.ErrSessionExpired) {
@@ -53,6 +52,43 @@ func AuthMiddleware(authDB *db.AuthDB) gin.HandlerFunc {
 		c.Set("is_admin", user.IsAdmin)
 		c.Next()
 	}
+}
+
+// OptionalAuthMiddleware sets user context if a valid Bearer token is provided,
+// but does not fail or abort the request if no token or an invalid token is given.
+func OptionalAuthMiddleware(authDB *db.AuthDB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		if header == "" || !strings.HasPrefix(header, "Bearer ") {
+			c.Next()
+			return
+		}
+
+		token := header[7:]
+		sessionHash := sha256Sum(token)
+
+		session, err := authDB.GetSession(sessionHash)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		user, err := authDB.GetUserByID(session.UserID)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		c.Set("user_id", user.ID)
+		c.Set("user_email", user.Email)
+		c.Set("is_admin", user.IsAdmin)
+		c.Next()
+	}
+}
+
+func sha256Sum(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
 }
 
 func AdminMiddleware() gin.HandlerFunc {

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -17,8 +16,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/NemuCorp/demo-repo/server/db"
+	"github.com/NemuCorp/demo-repo/server/logger"
 	"github.com/NemuCorp/demo-repo/server/myerrors"
 )
+
+func init() {
+	logger.Init(logger.ModeDevelopment)
+}
 
 func openTestDB(t *testing.T) *sql.DB {
 	t.Helper()
@@ -40,7 +44,11 @@ func setupTestDB(t *testing.T) (*db.DB, func()) {
 	t.Helper()
 	conn := openTestDB(t)
 
-	_, err := conn.Exec(`DELETE FROM cart_items`)
+	_, err := conn.Exec(`DELETE FROM analytics_events`)
+	if err != nil {
+		t.Fatalf("cleanup analytics_events: %v", err)
+	}
+	_, err = conn.Exec(`DELETE FROM cart_items`)
 	if err != nil {
 		t.Fatalf("cleanup cart_items: %v", err)
 	}
@@ -91,11 +99,6 @@ func createSession(t *testing.T, authDB *db.AuthDB, userID int) (plainToken stri
 		t.Fatalf("create session: %v", err)
 	}
 	return token
-}
-
-func sha256Sum(s string) string {
-	sum := sha256.Sum256([]byte(s))
-	return fmt.Sprintf("%x", sum)
 }
 
 func newTestEngine() *gin.Engine {
@@ -418,6 +421,143 @@ func TestProductHandler_Delete(t *testing.T) {
 				}
 				if body.Error != myerrors.ErrProductNotFound.Error() {
 					t.Errorf("Delete() error = %q, want %q", body.Error, myerrors.ErrProductNotFound.Error())
+				}
+			}
+		})
+	}
+}
+
+func TestTrackingHandler_Track(t *testing.T) {
+	database, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	handler := NewTrackingHandler(database.Tracking)
+	user := createUser(t, database.Auth, "track-user@test.com", "password123", false)
+	token := createSession(t, database.Auth, user.ID)
+
+	tests := []struct {
+		name       string
+		token      string
+		body       map[string]interface{}
+		wantStatus int
+	}{
+		{
+			name:       "records event without auth",
+			token:      "",
+			body:       map[string]interface{}{"event_type": "page_view", "event_data": map[string]interface{}{"path": "/"}},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "records event with auth",
+			token:      token,
+			body:       map[string]interface{}{"event_type": "product_view", "event_data": map[string]interface{}{"product_id": "1", "product_name": "Test"}},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "rejects missing event_type",
+			token:      "",
+			body:       map[string]interface{}{"event_data": map[string]interface{}{}},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "rejects invalid event_type",
+			token:      "",
+			body:       map[string]interface{}{"event_type": "invalid_type"},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "accepts event without event_data",
+			token:      "",
+			body:       map[string]interface{}{"event_type": "login"},
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := newTestEngine()
+			r.Use(OptionalAuthMiddleware(database.Auth))
+			r.POST("/api/track", handler.Track)
+
+			bodyBytes, _ := json.Marshal(tt.body)
+			req := httptest.NewRequest(http.MethodPost, "/api/track", bytes.NewReader(bodyBytes))
+			req.Header.Set("Content-Type", "application/json")
+			if tt.token != "" {
+				req.Header.Set("Authorization", "Bearer "+tt.token)
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tt.wantStatus {
+				t.Errorf("Track() status = %d, want %d. Body: %s", w.Code, tt.wantStatus, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestTrackingHandler_Dashboard(t *testing.T) {
+	database, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	handler := NewTrackingHandler(database.Tracking)
+	admin := createUser(t, database.Auth, "admin-stats@test.com", "password123", true)
+	adminToken := createSession(t, database.Auth, admin.ID)
+	user := createUser(t, database.Auth, "user-stats@test.com", "password123", false)
+	userToken := createSession(t, database.Auth, user.ID)
+
+	tests := []struct {
+		name       string
+		token      string
+		wantStatus int
+	}{
+		{
+			name:       "allows admin access to dashboard",
+			token:      adminToken,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "rejects non-admin user",
+			token:      userToken,
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "rejects missing auth",
+			token:      "",
+			wantStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := newTestEngine()
+			r.Use(AuthMiddleware(database.Auth), AdminMiddleware())
+			r.GET("/api/admin/stats", handler.Dashboard)
+
+			req := httptest.NewRequest(http.MethodGet, "/api/admin/stats", nil)
+			if tt.token != "" {
+				req.Header.Set("Authorization", "Bearer "+tt.token)
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tt.wantStatus {
+				t.Errorf("Dashboard() status = %d, want %d. Body: %s", w.Code, tt.wantStatus, w.Body.String())
+			}
+
+			if tt.wantStatus == http.StatusOK {
+				var metrics struct {
+					TotalUsers    int `json:"total_users"`
+					TotalProducts int `json:"total_products"`
+					PageViews     int `json:"page_views"`
+					ProductViews  int `json:"product_views"`
+					CartAdds      int `json:"cart_adds"`
+					Registrations int `json:"registrations"`
+				}
+				if err := json.Unmarshal(w.Body.Bytes(), &metrics); err != nil {
+					t.Fatalf("unmarshal dashboard response: %v", err)
+				}
+				if metrics.TotalUsers != 2 {
+					t.Errorf("Dashboard() total_users = %d, want 2", metrics.TotalUsers)
 				}
 			}
 		})

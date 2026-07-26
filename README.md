@@ -190,6 +190,7 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 | `REACT_APP_API_URL`   | `/api`                                        | Backend API base URL (used by the React SPA)     |
 | `REACT_APP_FORCE_ADMIN_VIEW` | (none)                                | If set to `true`, forces admin view regardless of hostname |
 | `REACT_APP_ADMIN_URL` | (derived from hostname)                       | Explicit admin site URL (overrides hostname logic) |
+| `REACT_APP_TRACKING_ENABLED` | `true`                               | Set to `false` to disable client-side analytics tracking |
 
 ## API Endpoints
 

@@ -214,44 +214,70 @@ func (t *TrackingDB) GetRecentEvents(limit int) ([]RecentEvent, error) {
 func (t *TrackingDB) GetDashboardMetrics() (*DashboardMetrics, error) {
 	m := &DashboardMetrics{}
 
-	t.getTotalUsers.QueryRow().Scan(&m.TotalUsers)
-	t.getTotalProducts.QueryRow().Scan(&m.TotalProducts)
-	t.getEventCount.QueryRow("page_view").Scan(&m.PageViews)
-	t.getEventCount.QueryRow("product_view").Scan(&m.ProductViews)
-	t.getEventCount.QueryRow("cart_add").Scan(&m.CartAdds)
-	t.getEventCount.QueryRow("registration").Scan(&m.Registrations)
+	if err := t.getTotalUsers.QueryRow().Scan(&m.TotalUsers); err != nil {
+		return nil, err
+	}
+	if err := t.getTotalProducts.QueryRow().Scan(&m.TotalProducts); err != nil {
+		return nil, err
+	}
+	if err := t.getEventCount.QueryRow("page_view").Scan(&m.PageViews); err != nil {
+		return nil, err
+	}
+	if err := t.getEventCount.QueryRow("product_view").Scan(&m.ProductViews); err != nil {
+		return nil, err
+	}
+	if err := t.getEventCount.QueryRow("cart_add").Scan(&m.CartAdds); err != nil {
+		return nil, err
+	}
+	if err := t.getEventCount.QueryRow("registration").Scan(&m.Registrations); err != nil {
+		return nil, err
+	}
 
 	m.Today = &TodayStats{}
 	todayStart := time.Now().Truncate(24 * time.Hour)
-	t.getTodayStats.QueryRow(todayStart).Scan(&m.Today.ActiveUsers, &m.Today.TotalEvents, &m.Today.ProductsViewed)
+	if err := t.getTodayStats.QueryRow(todayStart).Scan(&m.Today.ActiveUsers, &m.Today.TotalEvents, &m.Today.ProductsViewed); err != nil {
+		m.Today = nil
+	}
 
 	m.TopProducts = []TopProduct{}
 	rows, err := t.getTopProducts.Query(5)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var tp TopProduct
-			if err := rows.Scan(&tp.ProductID, &tp.ProductName, &tp.Views); err != nil {
-				continue
-			}
-			m.TopProducts = append(m.TopProducts, tp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var tp TopProduct
+		if err := rows.Scan(&tp.ProductID, &tp.ProductName, &tp.Views); err != nil {
+			return nil, err
 		}
+		m.TopProducts = append(m.TopProducts, tp)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
-	m.RecentActivity, _ = t.GetRecentEvents(20)
+	recentActivity, err := t.GetRecentEvents(20)
+	if err != nil {
+		return nil, err
+	}
+	m.RecentActivity = recentActivity
 
 	m.DailyStats = []DailyStat{}
 	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
 	dRows, err := t.getDailyStats.Query(sevenDaysAgo, 100)
-	if err == nil {
-		defer dRows.Close()
-		for dRows.Next() {
-			var ds DailyStat
-			if err := dRows.Scan(&ds.Day, &ds.EventType, &ds.Count); err != nil {
-				continue
-			}
-			m.DailyStats = append(m.DailyStats, ds)
+	if err != nil {
+		return nil, err
+	}
+	defer dRows.Close()
+	for dRows.Next() {
+		var ds DailyStat
+		if err := dRows.Scan(&ds.Day, &ds.EventType, &ds.Count); err != nil {
+			return nil, err
 		}
+		m.DailyStats = append(m.DailyStats, ds)
+	}
+	if err := dRows.Err(); err != nil {
+		return nil, err
 	}
 
 	return m, nil

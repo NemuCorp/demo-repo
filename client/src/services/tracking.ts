@@ -1,4 +1,4 @@
-const TRACK_ENABLED = true;
+const TRACK_ENABLED = process.env.REACT_APP_TRACKING_ENABLED !== 'false';
 
 function getToken(): string | null {
   return localStorage.getItem('auth_token');

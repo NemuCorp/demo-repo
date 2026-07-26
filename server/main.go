@@ -95,7 +95,7 @@ func main() {
 			cart.DELETE("/:productId", cartHandler.Remove)
 		}
 
-		tracking := api.Group("/track")
+		tracking := api.Group("/track", handler.OptionalAuthMiddleware(database.Auth))
 		{
 			tracking.POST("", trackingHandler.Track)
 		}
@@ -120,7 +120,7 @@ func main() {
 func corsAllowedOrigins() []string {
 	val := os.Getenv("CORS_ALLOWED_ORIGINS")
 	if val == "" {
-		return nil
+		val = "http://localhost:3000,http://admin.localhost:3000"
 	}
 	var origins []string
 	for _, o := range strings.Split(val, ",") {
