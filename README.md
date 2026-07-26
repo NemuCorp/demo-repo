@@ -50,6 +50,8 @@ Administrators can manage products — create, edit, and delete listings — fro
 ### For Administrators
 - **Admin Dashboard** — Protected admin area for managing store content.
 - **Product Management** — Create new products, edit existing ones, and remove discontinued items.
+- **Analytics & Tracking** — Automatic event tracking (page views, product views, cart actions, registrations) with an admin dashboard.
+- **Admin Subdomain Routing** — Serve the admin interface on an `admin.*` subdomain (e.g., `admin.localhost:3000`) with automatic redirect logic in `utils/host.ts`.
 
 ### Use Cases
 - **Small to medium online stores** — Launch a product catalog with shopping cart functionality quickly.
@@ -61,11 +63,11 @@ Administrators can manage products — create, edit, and delete listings — fro
 
 | Layer    | Technology                           |
 |----------|--------------------------------------|
-| Frontend | React 18, TypeScript, React Router 6 |
+| Frontend | React 18, TypeScript, React Router 7 |
 | Backend  | Go 1.21, Gin web framework           |
 | Database | PostgreSQL, raw SQL (no ORM)         |
 | Auth     | bcrypt password hashing, session tokens |
-| Logging  | `log/slog` (structured logging)      |
+| Logging  | Go standard log package                  |
 
 ## Project Structure
 
@@ -74,16 +76,26 @@ demo-repo/
 ├── client/                 # React + TypeScript frontend
 │   ├── public/             # Static assets
 │   └── src/
-│       ├── components/     # Reusable UI components (Navbar, ProductCard, ProtectedRoute)
+│       ├── components/     # Reusable UI components (Navbar, Layout, ProtectedRoute, AdminRoute)
 │       ├── contexts/       # React contexts (AuthContext)
-│       ├── pages/          # Page components (Home, Product, Cart, Login, Register, Admin)
-│       ├── services/       # API client and data-fetching logic
+│       ├── pages/          # Page components (Home, Products, ProductDetail, Cart, Login, Register)
+│       │   └── admin/      # Admin pages (Dashboard, AdminStats, ProductManagement)
+│       ├── services/       # API client, data-fetching logic, and analytics tracking
+│       ├── utils/          # Subdomain routing utilities (host)
+│       ├── types/          # TypeScript type definitions
 │       ├── App.tsx         # Root component with routes
 │       └── index.tsx       # Entry point
 ├── server/                 # Go + Gin backend
-│   ├── db/                 # Database access, prepared statements, migrations
-│   ├── handler/            # HTTP handlers (auth, cart, product)
-│   ├── logger/             # Structured logging setup
+│   ├── db/                 # Database access, prepared statements, migrations (auth, cart, product, tracking)
+│   │   ├── db.go, auth.go, cart.go, product.go, tracking.go
+│   │   ├── benchmark_test.go
+│   │   └── migrations/
+│   ├── handler/            # HTTP handlers (auth, cart, product, tracking)
+│   │   ├── auth.go, cart.go, product.go, tracking.go
+│   │   ├── handler_test.go
+│   │   ├── middleware.go
+│   │   └── helpers.go
+│   ├── logger/             # Logger setup (standard log package)
 │   ├── myerrors/           # Sentinel error types
 │   ├── main.go             # Server entry point and route configuration
 │   └── cmd.go              # CLI commands (migrate, clean, import, export)
@@ -174,7 +186,10 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 | `PORT`                 | `8080`                                        | Backend server port                              |
 | `ADMIN_EMAIL`          | (none)                                        | Email for the seeded admin account               |
 | `ADMIN_PASSWORD`       | (none)                                        | Password for the seeded admin account            |
-| `CORS_ALLOWED_ORIGINS` | (none)                                        | Comma-separated list of allowed CORS origins     |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://admin.localhost:3000` | Comma-separated list of allowed CORS origins     |
+| `REACT_APP_API_URL`   | `/api`                                        | Backend API base URL (used by the React SPA)     |
+| `REACT_APP_FORCE_ADMIN_VIEW` | (none)                                | If set to `true`, forces admin view regardless of hostname |
+| `REACT_APP_ADMIN_URL` | (derived from hostname)                       | Explicit admin site URL (overrides hostname logic) |
 
 ## API Endpoints
 
@@ -203,6 +218,18 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 | PUT    | `/api/cart/:productId`  | Yes  | Update item quantity     |
 | DELETE | `/api/cart/:productId`  | Yes  | Remove item from cart    |
 
+### Tracking
+| Method | Path            | Auth | Description           |
+|--------|-----------------|------|-----------------------|
+| POST   | `/api/track`    | No*  | Record an analytics event |
+
+*Note: Authentication is optional; if provided via Bearer token, the event is attributed to the user.
+
+### Admin
+| Method | Path              | Auth | Admin | Description                |
+|--------|-------------------|------|-------|----------------------------|
+| GET    | `/api/admin/stats` | Yes  | Yes   | Get admin dashboard metrics |
+
 ## Available Scripts
 
 ### Client (`client/`)
@@ -221,4 +248,6 @@ The React dev server starts on `http://localhost:3000` and proxies API requests 
 | `go run . up` | Run database migrations |
 | `go run . down` | Rollback the last migration |
 | `go run . clean` | Drop all database tables |
+| `go run . import` | Import data from a file (stub) |
+| `go run . export` | Export data to a file (stub) |
 | `go test ./...` | Run all Go tests |
