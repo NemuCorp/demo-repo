@@ -22,10 +22,25 @@ type TrackEventRequest struct {
 	EventData map[string]interface{} `json:"event_data"`
 }
 
+var allowedEventTypes = map[string]bool{
+	"page_view":      true,
+	"product_view":   true,
+	"product_created": true,
+	"cart_add":       true,
+	"cart_remove":    true,
+	"registration":   true,
+	"login":          true,
+}
+
 func (h *TrackingHandler) Track(c *gin.Context) {
 	var req TrackEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		JSONError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if !allowedEventTypes[req.EventType] {
+		JSONError(c, http.StatusBadRequest, "invalid event_type: must be one of page_view, product_view, product_created, cart_add, cart_remove, registration, login")
 		return
 	}
 

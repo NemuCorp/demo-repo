@@ -4,6 +4,7 @@ import * as api from '../../services/api';
 import { Product } from '../../types';
 import { getNormalSiteUrl } from '../../utils/host';
 import { trackPageView } from '../../services/tracking';
+import AdminStats from './AdminStats';
 
 function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,6 +79,9 @@ function AdminDashboard() {
           </tbody>
         </table>
       )}
+
+      <h2>Analytics</h2>
+      <AdminStats />
     </div>
   );
 }
