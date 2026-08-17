@@ -52,6 +52,26 @@ body {
   color: #fff;
 }
 
+.cart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  transition: color 0.2s;
+}
+
+.cart-icon:hover {
+  color: #fff;
+}
+
+.cart-icon svg {
+  flex: 0 0 auto;
+}
+
+.cart-icon-label {
+  margin-left: 6px;
+}
+
 .navbar-user {
   color: #888;
   font-size: 0.85rem;
@@ -216,6 +236,16 @@ body {
   font-size: 0.8rem;
   color: #888;
   margin-top: 4px;
+}
+
+.add-to-cart-btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.add-to-cart-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .product-detail {
