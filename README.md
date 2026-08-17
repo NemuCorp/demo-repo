@@ -64,7 +64,7 @@ Administrators can manage products — create, edit, and delete listings — fro
 | Layer    | Technology                           |
 |----------|--------------------------------------|
 | Frontend | React 18, TypeScript, React Router 7 |
-| Backend  | Go 1.21, Gin web framework           |
+| Backend  | Go 1.25, Gin web framework           |
 | Database | PostgreSQL, raw SQL (no ORM)         |
 | Auth     | bcrypt password hashing, session tokens |
 | Logging  | Go standard log package                  |
@@ -125,7 +125,7 @@ Database migrations run automatically on startup. To stop: `docker compose down`
 
 #### Prerequisites
 
-- **Go 1.21+** — [Download](https://go.dev/dl/)
+- **Go 1.25+** — [Download](https://go.dev/dl/)
 - **Node.js 18+** and **npm** — [Download](https://nodejs.org/)
 - **PostgreSQL** — Running instance (local or remote)
 
