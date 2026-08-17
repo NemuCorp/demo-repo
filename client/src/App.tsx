@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
@@ -19,9 +20,10 @@ function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route element={<Layout />}>
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route element={<Layout />}>
             {isAdminView ? (
               <>
                 <Route path="/login" element={<Login />} />
@@ -43,7 +45,8 @@ function App() {
             )}
           </Route>
         </Routes>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
