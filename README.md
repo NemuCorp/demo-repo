@@ -8,19 +8,25 @@ A full-stack e-commerce web application built with React, TypeScript, Go, and Po
 
 ### Home Page — Product Catalog
 
-![Home Page](screenshots/home-page.svg)
+![Home Page](screenshots/home.png)
 
 Browse all available products in a responsive grid layout. Each product card shows the name, price, stock status, and an image placeholder.
 
+### Products
+
+![Products](screenshots/products.png)
+
+The full product catalog rendered in a responsive grid. Each card links to the product's detail page.
+
 ### Product Detail Page
 
-![Product Detail](screenshots/product-page.svg)
+![Product Detail](screenshots/product-detail.png)
 
 View detailed information about a product, including its description, price, stock availability, and an image. Authenticated users can add items to their cart directly from this page.
 
 ### Shopping Cart
 
-![Cart](screenshots/cart-page.svg)
+![Cart](screenshots/cart.png)
 
 Review and manage items in your cart. Update quantities or remove items before proceeding to checkout.
 
@@ -28,15 +34,21 @@ Review and manage items in your cart. Update quantities or remove items before p
 
 | Login | Register |
 |-------|----------|
-| ![Login](screenshots/login-page.svg) | ![Register](screenshots/register-page.svg) |
+| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
 
 Secure authentication with hashed passwords and session tokens. Users can register a new account or log in with existing credentials.
 
 ### Admin Dashboard
 
-![Admin Dashboard](screenshots/admin-dashboard.svg)
+![Admin Dashboard](screenshots/admin-dashboard.png)
 
-Administrators can manage products — create, edit, and delete listings — from a dedicated admin panel.
+Administrators can manage products and monitor store-wide analytics from a dedicated admin panel.
+
+### Admin Product Management
+
+![Admin Product Management](screenshots/admin-products.png)
+
+Create, edit, and delete product listings from the admin panel.
 
 ## Features
 
